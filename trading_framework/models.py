@@ -73,6 +73,12 @@ class MarketSession:
 
 
 @dataclass(frozen=True)
+class SignalHistorySettings:
+    enabled: bool = True
+    path: str = "signal_history.jsonl"
+
+
+@dataclass(frozen=True)
 class AppSettings:
     symbols: List[str]
     poll_interval_seconds: int
@@ -80,3 +86,4 @@ class AppSettings:
     strategy: StrategySettings
     notifiers: List[NotifierSettings]
     market_session: Optional[MarketSession] = None
+    signal_history: Optional[SignalHistorySettings] = None
