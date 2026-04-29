@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import json
+import logging
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import List
+
+logger = logging.getLogger(__name__)
 
 from .models import Signal, SignalHistorySettings
 
@@ -40,10 +43,17 @@ class JsonLinesHistory(SignalHistory):
             return []
         records = []
         with open(self.path, "r", encoding="utf-8") as f:
-            for line in f:
+            for line_num, line in enumerate(f, 1):
                 line = line.strip()
                 if line:
-                    records.append(json.loads(line))
+                    try:
+                        records.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        logger.warning(
+                            "Skipping malformed JSON at line %d in %s",
+                            line_num,
+                            self.path,
+                        )
         return records
 
 

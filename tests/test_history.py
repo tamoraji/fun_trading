@@ -58,7 +58,10 @@ class JsonLinesHistoryTests(unittest.TestCase):
         self.assertEqual("MSFT", records[1]["symbol"])
 
     def test_read_all_returns_empty_for_nonexistent_file(self):
-        history = JsonLinesHistory("/tmp/does_not_exist_test_history.jsonl")
+        nonexistent = os.path.join(
+            tempfile.gettempdir(), "does_not_exist_test_history.jsonl"
+        )
+        history = JsonLinesHistory(nonexistent)
         records = history.read_all()
         self.assertEqual([], records)
 
@@ -104,7 +107,8 @@ class CreateSignalHistoryTests(unittest.TestCase):
         self.assertIsInstance(history, NullHistory)
 
     def test_returns_jsonlines_when_enabled(self):
-        settings = SignalHistorySettings(enabled=True, path="/tmp/test.jsonl")
+        tmp_path = os.path.join(tempfile.gettempdir(), "test_signal_history.jsonl")
+        settings = SignalHistorySettings(enabled=True, path=tmp_path)
         history = create_signal_history(settings)
         self.assertIsInstance(history, JsonLinesHistory)
 
