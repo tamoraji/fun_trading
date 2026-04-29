@@ -1,0 +1,48 @@
+{
+  "symbols": [
+    "AAPL",
+    "MSFT",
+    "SPY"
+  ],
+  "poll_interval_seconds": 300,
+  "market_data": {
+    "provider": "yahoo",
+    "bar_interval": "5m",
+    "lookback": "5d",
+    "timeout_seconds": 10
+  },
+  "strategy": {
+    "name": "moving_average_crossover",
+    "params": {
+      "short_window": 5,
+      "long_window": 20
+    }
+  },
+  "signal_history": {
+    "enabled": true,
+    "path": "signal_history.jsonl"
+  },
+  "market_session": {
+    "enabled": true,
+    "timezone": "America/New_York",
+    "weekdays": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "start": "09:30",
+    "end": "16:00"
+  },
+  "notifiers": [
+    {
+      "type": "console"
+    },
+    {
+      "type": "webhook",
+      "enabled": false,
+      "url": "https://example.com/hooks/trading-signals"
+    }
+  ]
+}
