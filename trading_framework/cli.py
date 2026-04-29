@@ -12,12 +12,16 @@ from .strategy import create_strategy
 from .structlog import StructuredLogger
 
 
-def build_engine_from_settings(settings) -> TradingEngine:
+def build_engine_from_settings(settings, pretty: bool = False) -> TradingEngine:
     provider = create_market_data_provider(settings.market_data)
     strategy = create_strategy(settings.strategy)
     notifiers = create_notifiers(settings.notifiers)
     history = create_signal_history(settings.signal_history)
-    logger = StructuredLogger()
+    if pretty:
+        from .prettylog import PrettyLogger
+        logger = PrettyLogger()
+    else:
+        logger = StructuredLogger()
     return TradingEngine(
         settings=settings,
         provider=provider,
@@ -59,7 +63,7 @@ def main(argv=None) -> int:
     if use_interactive:
         from .interactive import run_interactive_setup
         settings = run_interactive_setup()
-        engine = build_engine_from_settings(settings)
+        engine = build_engine_from_settings(settings, pretty=True)
     else:
         config_path = args.config or "config.example.json"
         engine = build_engine(config_path)
