@@ -39,17 +39,25 @@ class TradingEngine:
             self.logger("[skip] market session is closed")
             return []
 
+        self.logger(f"[cycle_start] symbols={self.settings.symbols}")
+
+        started = time.monotonic()
         emitted: List[Signal] = []
+        holds = 0
+        errors = 0
+
         for symbol in self.settings.symbols:
             try:
                 bars = self.provider.fetch_bars(symbol, self.settings.market_data)
                 signal = self.strategy.evaluate(symbol, bars)
             except Exception as exc:  # pragma: no cover - defensive logging
                 self.logger(f"[error] {symbol}: {exc}")
+                errors += 1
                 continue
 
             if signal.action == HOLD:
                 self.logger(f"[hold] {symbol}: {signal.reason}")
+                holds += 1
                 continue
 
             signal_key = (signal.action, signal.timestamp.isoformat())
@@ -69,6 +77,11 @@ class TradingEngine:
             self.logger(f"[signal] {symbol}: {signal.action} at {signal.price:.2f}")
             emitted.append(signal)
 
+        elapsed = time.monotonic() - started
+        self.logger(
+            f"[cycle_end] signals={len(emitted)} holds={holds} errors={errors} "
+            f"elapsed={elapsed:.3f}s"
+        )
         return emitted
 
     def run_forever(self) -> None:

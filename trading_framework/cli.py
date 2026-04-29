@@ -8,6 +8,7 @@ from .engine import TradingEngine
 from .history import create_signal_history
 from .notifiers import create_notifiers
 from .strategy import create_strategy
+from .structlog import StructuredLogger
 
 
 def build_engine(config_path: str) -> TradingEngine:
@@ -16,12 +17,14 @@ def build_engine(config_path: str) -> TradingEngine:
     strategy = create_strategy(settings.strategy)
     notifiers = create_notifiers(settings.notifiers)
     history = create_signal_history(settings.signal_history)
+    logger = StructuredLogger()
     return TradingEngine(
         settings=settings,
         provider=provider,
         strategy=strategy,
         notifiers=notifiers,
         history=history,
+        logger=logger,
     )
 
 
