@@ -18,6 +18,10 @@
       "long_window": 20
     }
   },
+  "signal_history": {
+    "enabled": true,
+    "path": "signal_history.jsonl"
+  },
   "market_session": {
     "enabled": true,
     "timezone": "America/New_York",

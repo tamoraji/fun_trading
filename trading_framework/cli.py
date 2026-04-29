@@ -5,6 +5,7 @@ import argparse
 from .config import load_settings
 from .data import create_market_data_provider
 from .engine import TradingEngine
+from .history import create_signal_history
 from .notifiers import create_notifiers
 from .strategy import create_strategy
 
@@ -14,7 +15,14 @@ def build_engine(config_path: str) -> TradingEngine:
     provider = create_market_data_provider(settings.market_data)
     strategy = create_strategy(settings.strategy)
     notifiers = create_notifiers(settings.notifiers)
-    return TradingEngine(settings=settings, provider=provider, strategy=strategy, notifiers=notifiers)
+    history = create_signal_history(settings.signal_history)
+    return TradingEngine(
+        settings=settings,
+        provider=provider,
+        strategy=strategy,
+        notifiers=notifiers,
+        history=history,
+    )
 
 
 def main(argv=None) -> int:

@@ -10,6 +10,7 @@ from .models import (
     MarketDataConfig,
     MarketSession,
     NotifierSettings,
+    SignalHistorySettings,
     StrategySettings,
 )
 
@@ -24,6 +25,7 @@ def load_settings(path: str | Path) -> AppSettings:
     strategy = _load_strategy(raw.get("strategy"))
     market_session = _load_market_session(raw.get("market_session"))
     notifiers = _load_notifiers(raw.get("notifiers", [{"type": "console"}]))
+    signal_history = _load_signal_history(raw.get("signal_history"))
 
     return AppSettings(
         symbols=symbols,
@@ -32,6 +34,7 @@ def load_settings(path: str | Path) -> AppSettings:
         strategy=strategy,
         notifiers=notifiers,
         market_session=market_session,
+        signal_history=signal_history,
     )
 
 
@@ -80,6 +83,15 @@ def _load_market_session(raw: Any) -> MarketSession | None:
         weekdays=weekdays,
         start=start,
         end=end,
+    )
+
+
+def _load_signal_history(raw: Any) -> SignalHistorySettings | None:
+    if not isinstance(raw, dict):
+        return None
+    return SignalHistorySettings(
+        enabled=bool(raw.get("enabled", True)),
+        path=str(raw.get("path", "signal_history.jsonl")),
     )
 
 

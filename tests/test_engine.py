@@ -3,6 +3,7 @@ import unittest
 
 from trading_framework.data import MarketDataProvider
 from trading_framework.engine import TradingEngine
+from trading_framework.history import SignalHistory
 from trading_framework.models import (
     AppSettings,
     MarketDataConfig,
@@ -24,6 +25,17 @@ class FakeProvider(MarketDataProvider):
     def fetch_bars(self, symbol, config):
         self.calls += 1
         return self.bars_by_symbol[symbol]
+
+
+class RecordingHistory(SignalHistory):
+    def __init__(self):
+        self.signals = []
+
+    def write(self, signal):
+        self.signals.append(signal)
+
+    def read_all(self):
+        return self.signals
 
 
 class RecordingNotifier(Notifier):
@@ -88,6 +100,25 @@ class TradingEngineTests(unittest.TestCase):
         self.assertEqual([], signals)
         self.assertEqual(0, provider.calls)
         self.assertEqual([], notifier.signals)
+
+
+    def test_engine_writes_emitted_signals_to_history(self):
+        provider = FakeProvider({"AAPL": build_bars("AAPL", [12, 12, 12, 12, 12, 10, 9, 8, 9, 12])})
+        notifier = RecordingNotifier()
+        history = RecordingHistory()
+        engine = TradingEngine(
+            settings=self._settings(),
+            provider=provider,
+            strategy=MovingAverageCrossoverStrategy(short_window=3, long_window=5),
+            notifiers=[notifier],
+            history=history,
+            logger=lambda _: None,
+        )
+
+        engine.run_cycle()
+
+        self.assertEqual(1, len(history.signals))
+        self.assertEqual("AAPL", history.signals[0].symbol)
 
 
 if __name__ == "__main__":

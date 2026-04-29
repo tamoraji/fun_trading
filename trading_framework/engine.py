@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import Callable, Dict, List, Tuple
 
 from .data import MarketDataProvider
+from .history import SignalHistory, NullHistory
 from .models import AppSettings, HOLD, Signal
 from .notifiers import Notifier
 from .strategy import Strategy
@@ -17,6 +18,7 @@ class TradingEngine:
         provider: MarketDataProvider,
         strategy: Strategy,
         notifiers: List[Notifier],
+        history: SignalHistory | None = None,
         clock: Callable[[], datetime] | None = None,
         sleeper: Callable[[float], None] | None = None,
         logger: Callable[[str], None] | None = None,
@@ -25,6 +27,7 @@ class TradingEngine:
         self.provider = provider
         self.strategy = strategy
         self.notifiers = notifiers
+        self.history = history or NullHistory()
         self.clock = clock or (lambda: datetime.now(timezone.utc))
         self.sleeper = sleeper or time.sleep
         self.logger = logger or print
@@ -56,6 +59,11 @@ class TradingEngine:
 
             for notifier in self.notifiers:
                 notifier.send(signal)
+
+            try:
+                self.history.write(signal)
+            except Exception as exc:
+                self.logger(f"[error] history write failed for {symbol}: {exc}")
 
             self._last_signal_keys[symbol] = signal_key
             self.logger(f"[signal] {symbol}: {signal.action} at {signal.price:.2f}")
