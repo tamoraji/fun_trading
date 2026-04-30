@@ -42,6 +42,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # enable risk -> No
             "",      # cache -> Yes (default)
             "",      # cache TTL -> 300 (default)
+            "",      # paper trading -> No
             "",      # signal history -> Yes
             "",      # history path -> signal_history.jsonl
             "",      # save config -> No
@@ -71,6 +72,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "",              # enable risk -> No
             "",              # cache -> Yes (default)
             "",              # cache TTL -> 300 (default)
+            "",              # paper trading -> No
             "y",             # signal history
             "",              # history path default
             "n",             # don't save config
@@ -100,6 +102,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "",          # enable risk -> No
             "",          # cache -> Yes (default)
             "",          # cache TTL -> 300 (default)
+            "",          # paper trading -> No
             "",          # signal history -> Yes
             "",          # history path
             "",          # save config -> No
@@ -123,6 +126,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # enable risk -> No
             "",      # cache -> Yes (default)
             "",      # cache TTL -> 300 (default)
+            "",      # paper trading -> No
             "",      # signal history
             "",      # history path
             "",      # save config
@@ -143,6 +147,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # enable risk -> No
             "",      # cache -> Yes (default)
             "",      # cache TTL -> 300 (default)
+            "",      # paper trading -> No
             "",      # signal history
             "",      # history path
             "",      # save config
@@ -166,6 +171,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # enable risk -> No
             "",      # cache -> Yes (default)
             "",      # cache TTL -> 300 (default)
+            "",      # paper trading -> No
             "",      # signal history
             "",      # history path
             "",      # save config
@@ -186,6 +192,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # enable risk -> No
             "",      # cache -> Yes (default)
             "",      # cache TTL -> 300 (default)
+            "",      # paper trading -> No
             "",      # signal history
             "",      # history path
             "",      # save config
@@ -206,6 +213,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # enable risk -> No
             "",      # cache -> Yes (default)
             "",      # cache TTL -> 300 (default)
+            "",      # paper trading -> No
             "n",     # NO signal history
             "",      # save config
             "1",     # run once
@@ -231,6 +239,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "3",     # max signals per day
             "",      # cache -> Yes (default)
             "",      # cache TTL -> 300 (default)
+            "",      # paper trading -> No
             "",      # signal history
             "",      # history path
             "",      # save config
@@ -256,6 +265,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "",          # enable risk -> No
             "",          # cache -> Yes (default)
             "",          # cache TTL -> 300 (default)
+            "",          # paper trading -> No
             "y",         # signal history
             "",          # history path
             "n",         # don't save
@@ -277,6 +287,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # enable risk -> No
             "",      # cache -> Yes (default)
             "",      # cache TTL -> 300 (default)
+            "",      # paper trading -> No
             "",      # signal history
             "",      # history path
             "",      # save config
@@ -304,6 +315,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # market session
             "",      # risk -> No
             "n",     # cache -> No
+            "",      # paper trading -> No
             "",      # signal history
             "",      # history path
             "",      # save config
@@ -311,6 +323,31 @@ class InteractiveSetupTests(unittest.TestCase):
         ]
         result = self._run_with_inputs(inputs)
         self.assertFalse(result.settings.cache_enabled)
+
+    def test_paper_trading_enabled(self):
+        inputs = [
+            "",      # symbols
+            "",      # strategy
+            "",      # short_window
+            "",      # long_window
+            "",      # bar_interval
+            "",      # poll_interval
+            "",      # market session
+            "",      # risk -> No
+            "",      # cache -> Yes
+            "",      # cache TTL -> 300
+            "y",     # paper trading -> Yes
+            "50000", # starting cash
+            "20",    # position size %
+            "",      # signal history
+            "",      # history path
+            "",      # save config
+            "1",     # run once
+        ]
+        result = self._run_with_inputs(inputs)
+        self.assertTrue(result.settings.paper_trading)
+        self.assertEqual(50000.0, result.settings.paper_starting_cash)
+        self.assertEqual(20.0, result.settings.paper_position_size_pct)
 
 
 class ParseStrategyChoicesTests(unittest.TestCase):
