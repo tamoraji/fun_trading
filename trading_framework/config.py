@@ -52,6 +52,10 @@ def load_settings(path: str | Path) -> AppSettings:
         cache_enabled=cache_enabled,
         cache_dir=cache_dir,
         cache_ttl_seconds=cache_ttl,
+        paper_trading=bool(raw.get("paper_trading", {}).get("enabled", False)) if isinstance(raw.get("paper_trading"), dict) else False,
+        paper_starting_cash=float(raw.get("paper_trading", {}).get("starting_cash", 100_000)) if isinstance(raw.get("paper_trading"), dict) else 100_000.0,
+        paper_position_size_pct=float(raw.get("paper_trading", {}).get("position_size_pct", 10)) if isinstance(raw.get("paper_trading"), dict) else 10.0,
+        paper_portfolio_path=str(raw.get("paper_trading", {}).get("portfolio_path", "paper_portfolio.json")) if isinstance(raw.get("paper_trading"), dict) else "paper_portfolio.json",
     )
 
 

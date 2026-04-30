@@ -63,6 +63,22 @@ def _run_backtest(settings) -> int:
     return 0
 
 
+def _create_portfolio(settings):
+    if not settings.paper_trading:
+        return None
+    from .paper import PaperPortfolio
+    from pathlib import Path
+    path = settings.paper_portfolio_path
+    if Path(path).exists():
+        print(f"  Loading existing portfolio from {path}...")
+        return PaperPortfolio.load(path)
+    return PaperPortfolio(
+        starting_cash=settings.paper_starting_cash,
+        cash=settings.paper_starting_cash,
+        position_size_pct=settings.paper_position_size_pct,
+    )
+
+
 def _create_risk_manager(settings):
     from .risk import RiskManager, RiskSettings, NullRiskManager
     if not settings.risk:
@@ -88,6 +104,7 @@ def build_engine_from_settings(settings, pretty: bool = False) -> TradingEngine:
     notifiers = create_notifiers(settings.notifiers)
     history = create_signal_history(settings.signal_history)
     risk_manager = _create_risk_manager(settings)
+    portfolio = _create_portfolio(settings)
     if pretty:
         from .prettylog import PrettyLogger
         logger = PrettyLogger()
@@ -101,6 +118,7 @@ def build_engine_from_settings(settings, pretty: bool = False) -> TradingEngine:
         history=history,
         logger=logger,
         risk_manager=risk_manager,
+        portfolio=portfolio,
     )
 
 
@@ -142,8 +160,13 @@ def main(argv=None) -> int:
         engine = build_engine_from_settings(result.settings, pretty=True)
         if result.run_once or args.once:
             engine.run_cycle()
+            _finalize_portfolio(engine)
             return 0
-        engine.run_forever()
+        try:
+            engine.run_forever()
+        except KeyboardInterrupt:
+            pass
+        _finalize_portfolio(engine)
         return 0
 
     config_path = args.config or "config.example.json"
@@ -151,7 +174,22 @@ def main(argv=None) -> int:
 
     if args.once:
         engine.run_cycle()
+        _finalize_portfolio(engine)
         return 0
 
-    engine.run_forever()
+    try:
+        engine.run_forever()
+    except KeyboardInterrupt:
+        pass
+    _finalize_portfolio(engine)
     return 0
+
+
+def _finalize_portfolio(engine: TradingEngine) -> None:
+    """Show portfolio summary and save state if paper trading is active."""
+    if not engine.portfolio:
+        return
+    print(engine.portfolio.summary())
+    path = engine.settings.paper_portfolio_path
+    engine.portfolio.save(path)
+    print(f"\n  Portfolio saved to {path}")
