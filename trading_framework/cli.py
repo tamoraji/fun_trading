@@ -148,6 +148,11 @@ def main(argv=None) -> int:
         action="store_true",
         help="Run a single polling cycle and exit.",
     )
+    parser.add_argument(
+        "--tui",
+        action="store_true",
+        help="Launch TUI dashboard for live visual monitoring.",
+    )
     args = parser.parse_args(argv)
 
     use_interactive = args.interactive or (args.config is None and sys.stdin.isatty())
@@ -158,6 +163,11 @@ def main(argv=None) -> int:
 
         if result.backtest:
             return _run_backtest(result.settings)
+
+        if result.tui or args.tui:
+            from .tui import run_tui
+            run_tui(result.settings)
+            return 0
 
         engine = build_engine_from_settings(result.settings, pretty=True)
         if result.run_once or args.once:
@@ -172,6 +182,13 @@ def main(argv=None) -> int:
         return 0
 
     config_path = args.config or "config.example.json"
+
+    if args.tui:
+        from .tui import run_tui
+        settings = load_settings(config_path)
+        run_tui(settings)
+        return 0
+
     engine = build_engine(config_path)
 
     if args.once:

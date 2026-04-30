@@ -21,6 +21,7 @@ class InteractiveResult:
     settings: AppSettings
     run_once: bool
     backtest: bool = False
+    tui: bool = False
 
 STRATEGY_INFO = {
     "moving_average_crossover": {
@@ -401,14 +402,16 @@ def run_interactive_setup() -> InteractiveResult:
     _print("  1. Run once (analyze now and exit)")
     _print("  2. Monitor continuously (poll every {0}s)".format(poll_seconds))
     _print("  3. Backtest (replay historical data)")
-    _print("  4. Cancel")
+    _print("  4. TUI Dashboard (live visual monitoring)")
+    _print("  5. Cancel")
     run_choice = _ask("Choose", "1")
-    if run_choice == "4":
+    if run_choice == "5":
         _print("Setup cancelled.")
         raise SystemExit(0)
 
     is_backtest = run_choice == "3"
-    run_once = run_choice not in ("2", "3")
+    is_tui = run_choice == "4"
+    run_once = run_choice not in ("2", "3", "4")
 
     # Backtest-specific config
     if is_backtest:
@@ -426,6 +429,8 @@ def run_interactive_setup() -> InteractiveResult:
     _print()
     if is_backtest:
         _print("Running backtest...")
+    elif is_tui:
+        _print("Launching TUI dashboard...")
     elif run_once:
         _print("Running analysis...")
     else:
@@ -459,7 +464,7 @@ def run_interactive_setup() -> InteractiveResult:
         paper_starting_cash=paper_cash,
         paper_position_size_pct=paper_size_pct,
     )
-    return InteractiveResult(settings=settings, run_once=run_once, backtest=is_backtest)
+    return InteractiveResult(settings=settings, run_once=run_once, backtest=is_backtest, tui=is_tui)
 
 
 def _save_config_file(
