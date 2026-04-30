@@ -16,17 +16,18 @@ class TradingEngine:
         self,
         settings: AppSettings,
         provider: MarketDataProvider,
-        strategy: Strategy,
-        notifiers: List[Notifier],
+        strategy: Strategy | None = None,
+        notifiers: List[Notifier] | None = None,
         history: SignalHistory | None = None,
         clock: Callable[[], datetime] | None = None,
         sleeper: Callable[[float], None] | None = None,
         logger: Callable[[str], None] | None = None,
+        strategies: List[Strategy] | None = None,
     ):
         self.settings = settings
         self.provider = provider
-        self.strategy = strategy
-        self.notifiers = notifiers
+        self.strategies = strategies or ([strategy] if strategy else [])
+        self.notifiers = notifiers or []
         self.history = history or NullHistory()
         self.clock = clock or (lambda: datetime.now(timezone.utc))
         self.sleeper = sleeper or time.sleep
@@ -49,33 +50,41 @@ class TradingEngine:
         for symbol in self.settings.symbols:
             try:
                 bars = self.provider.fetch_bars(symbol, self.settings.market_data)
-                signal = self.strategy.evaluate(symbol, bars)
             except Exception as exc:  # pragma: no cover - defensive logging
                 self.logger(f"[error] {symbol}: {exc}")
                 errors += 1
                 continue
 
-            if signal.action == HOLD:
-                self.logger(f"[hold] {symbol}: {signal.reason}")
-                holds += 1
-                continue
+            for strategy in self.strategies:
+                try:
+                    signal = strategy.evaluate(symbol, bars)
+                except Exception as exc:
+                    self.logger(f"[error] {symbol}/{strategy.name}: {exc}")
+                    errors += 1
+                    continue
 
-            signal_key = (signal.action, signal.timestamp.isoformat())
-            if self._last_signal_keys.get(symbol) == signal_key:
-                self.logger(f"[dup] {symbol}: already sent {signal.action} for this bar")
-                continue
+                if signal.action == HOLD:
+                    self.logger(f"[hold] {symbol}/{signal.strategy_name}: {signal.reason}")
+                    holds += 1
+                    continue
 
-            for notifier in self.notifiers:
-                notifier.send(signal)
+                dedup_key = f"{symbol}:{signal.strategy_name}"
+                signal_key = (signal.action, signal.timestamp.isoformat())
+                if self._last_signal_keys.get(dedup_key) == signal_key:
+                    self.logger(f"[dup] {symbol}/{signal.strategy_name}: already sent {signal.action} for this bar")
+                    continue
 
-            try:
-                self.history.write(signal)
-            except Exception as exc:
-                self.logger(f"[error] history write failed for {symbol}: {exc}")
+                for notifier in self.notifiers:
+                    notifier.send(signal)
 
-            self._last_signal_keys[symbol] = signal_key
-            self.logger(f"[signal] {symbol}: {signal.action} at {signal.price:.2f}")
-            emitted.append(signal)
+                try:
+                    self.history.write(signal)
+                except Exception as exc:
+                    self.logger(f"[error] history write failed for {symbol}: {exc}")
+
+                self._last_signal_keys[dedup_key] = signal_key
+                self.logger(f"[signal] {symbol}/{signal.strategy_name}: {signal.action} at {signal.price:.2f}")
+                emitted.append(signal)
 
         elapsed = time.monotonic() - started
         self.logger(

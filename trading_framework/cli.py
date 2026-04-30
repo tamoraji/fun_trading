@@ -14,7 +14,7 @@ from .structlog import StructuredLogger
 
 def build_engine_from_settings(settings, pretty: bool = False) -> TradingEngine:
     provider = create_market_data_provider(settings.market_data)
-    strategy = create_strategy(settings.strategy)
+    strategies = [create_strategy(s) for s in settings.all_strategies]
     notifiers = create_notifiers(settings.notifiers)
     history = create_signal_history(settings.signal_history)
     if pretty:
@@ -25,16 +25,16 @@ def build_engine_from_settings(settings, pretty: bool = False) -> TradingEngine:
     return TradingEngine(
         settings=settings,
         provider=provider,
-        strategy=strategy,
+        strategies=strategies,
         notifiers=notifiers,
         history=history,
         logger=logger,
     )
 
 
-def build_engine(config_path: str) -> TradingEngine:
+def build_engine(config_path: str, pretty: bool = False) -> TradingEngine:
     settings = load_settings(config_path)
-    return build_engine_from_settings(settings)
+    return build_engine_from_settings(settings, pretty=pretty)
 
 
 def main(argv=None) -> int:
@@ -62,11 +62,16 @@ def main(argv=None) -> int:
 
     if use_interactive:
         from .interactive import run_interactive_setup
-        settings = run_interactive_setup()
-        engine = build_engine_from_settings(settings, pretty=True)
-    else:
-        config_path = args.config or "config.example.json"
-        engine = build_engine(config_path)
+        result = run_interactive_setup()
+        engine = build_engine_from_settings(result.settings, pretty=True)
+        if result.run_once or args.once:
+            engine.run_cycle()
+            return 0
+        engine.run_forever()
+        return 0
+
+    config_path = args.config or "config.example.json"
+    engine = build_engine(config_path)
 
     if args.once:
         engine.run_cycle()

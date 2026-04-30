@@ -87,3 +87,9 @@ class AppSettings:
     notifiers: List[NotifierSettings]
     market_session: Optional[MarketSession] = None
     signal_history: Optional[SignalHistorySettings] = None
+    strategies: List[StrategySettings] = field(default_factory=list)
+
+    @property
+    def all_strategies(self) -> List[StrategySettings]:
+        """Return all configured strategies. Falls back to single strategy for backward compat."""
+        return self.strategies if self.strategies else [self.strategy]
