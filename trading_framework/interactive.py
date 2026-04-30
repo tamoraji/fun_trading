@@ -72,6 +72,15 @@ STRATEGY_INFO = {
         ],
         "bars_needed": lambda p: p.get("direction_period", 49) + p.get("confirming_period", 15) + 1,
     },
+    "market_profile": {
+        "display_name": "Market Profile (Value Area)",
+        "short_desc": "Trades price relative to the value area — buy below value, sell above value.",
+        "params": [
+            {"name": "lookback", "prompt": "Lookback window (bars for value area)", "default": 20, "type": int},
+            {"name": "value_area_pct", "prompt": "Value area % (volume coverage)", "default": 70.0, "type": float},
+        ],
+        "bars_needed": lambda p: p.get("lookback", 20) + 1,
+    },
 }
 
 BAR_INTERVALS = ["1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo"]

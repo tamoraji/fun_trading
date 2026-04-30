@@ -452,6 +452,94 @@ class GoslinMomentumStrategy(Strategy):
         )
 
 
+class MarketProfileStrategy(Strategy):
+    name = "market_profile"
+
+    def __init__(self, lookback: int = 20, value_area_pct: float = 70.0):
+        if lookback <= 0:
+            raise ValueError("Lookback must be a positive integer.")
+        if not (1 <= value_area_pct <= 100):
+            raise ValueError("value_area_pct must be between 1 and 100.")
+        self.lookback = lookback
+        self.value_area_pct = value_area_pct
+
+    def evaluate(self, symbol: str, bars: List[PriceBar]) -> Signal:
+        latest_bar = bars[-1]
+
+        if len(bars) < self.lookback + 1:
+            return Signal(
+                symbol=symbol,
+                action=HOLD,
+                price=latest_bar.close,
+                timestamp=latest_bar.timestamp,
+                reason="Not enough history to compute market profile.",
+                strategy_name=self.name,
+                details={"bars_available": len(bars), "bars_needed": self.lookback + 1},
+            )
+
+        lookback_bars = bars[-self.lookback - 1:-1]
+        current_bar = bars[-1]
+        previous_bar = bars[-2]
+
+        poc, vwap, vah, val = _compute_value_area(lookback_bars, self.value_area_pct)
+
+        prev_close = previous_bar.close
+        curr_close = current_bar.close
+
+        if curr_close > vah:
+            price_location = "above_value"
+        elif curr_close < val:
+            price_location = "below_value"
+        else:
+            price_location = "in_value"
+
+        details = {
+            "poc": poc,
+            "vwap": vwap,
+            "vah": vah,
+            "val": val,
+            "current_close": curr_close,
+            "previous_close": prev_close,
+            "price_location": price_location,
+            "lookback": self.lookback,
+            "value_area_pct": self.value_area_pct,
+        }
+
+        # BUY: was below VAL, crossed back above VAL
+        if prev_close < val and curr_close >= val:
+            return Signal(
+                symbol=symbol,
+                action=BUY,
+                price=latest_bar.close,
+                timestamp=latest_bar.timestamp,
+                reason="Price returned to value area from below (mean reversion buy).",
+                strategy_name=self.name,
+                details=details,
+            )
+
+        # SELL: was above VAH, crossed back below VAH
+        if prev_close > vah and curr_close <= vah:
+            return Signal(
+                symbol=symbol,
+                action=SELL,
+                price=latest_bar.close,
+                timestamp=latest_bar.timestamp,
+                reason="Price returned to value area from above (mean reversion sell).",
+                strategy_name=self.name,
+                details=details,
+            )
+
+        return Signal(
+            symbol=symbol,
+            action=HOLD,
+            price=latest_bar.close,
+            timestamp=latest_bar.timestamp,
+            reason="No value area crossover on the latest bar.",
+            strategy_name=self.name,
+            details=details,
+        )
+
+
 def create_strategy(settings: StrategySettings) -> Strategy:
     if settings.name == "moving_average_crossover":
         return MovingAverageCrossoverStrategy(
@@ -481,6 +569,11 @@ def create_strategy(settings: StrategySettings) -> Strategy:
             timing_short=int(settings.params.get("timing_short", 3)),
             timing_long=int(settings.params.get("timing_long", 10)),
             confirming_period=int(settings.params.get("confirming_period", 15)),
+        )
+    if settings.name == "market_profile":
+        return MarketProfileStrategy(
+            lookback=int(settings.params.get("lookback", 20)),
+            value_area_pct=float(settings.params.get("value_area_pct", 70.0)),
         )
     raise ValueError(f"Unsupported strategy: {settings.name}")
 
@@ -516,6 +609,40 @@ def _compute_ema(values: List[float], period: int) -> List[float]:
     for v in values[period:]:
         ema_values.append(v * multiplier + ema_values[-1] * (1 - multiplier))
     return ema_values
+
+
+def _compute_value_area(
+    bars: List[PriceBar], value_area_pct: float
+) -> tuple[float, float, float, float]:
+    """Compute POC, VWAP, VAH, VAL from a list of PriceBars."""
+    total_volume = sum(b.volume for b in bars)
+    if total_volume == 0:
+        closes = [b.close for b in bars]
+        mid = _average(closes)
+        return mid, mid, max(closes), min(closes)
+
+    # VWAP
+    vwap = sum(b.close * b.volume for b in bars) / total_volume
+
+    # POC: bar with highest volume
+    poc_bar = max(bars, key=lambda b: b.volume)
+    poc = poc_bar.close
+
+    # Value Area: sort bars by volume descending, accumulate until value_area_pct reached
+    sorted_bars = sorted(bars, key=lambda b: b.volume, reverse=True)
+    target_volume = total_volume * (value_area_pct / 100)
+    accumulated = 0.0
+    value_bars: List[PriceBar] = []
+    for bar in sorted_bars:
+        value_bars.append(bar)
+        accumulated += bar.volume
+        if accumulated >= target_volume:
+            break
+
+    vah = max(b.close for b in value_bars)
+    val = min(b.close for b in value_bars)
+
+    return poc, round(vwap, 4), round(vah, 4), round(val, 4)
 
 
 def _average(values: Iterable[float]) -> float:

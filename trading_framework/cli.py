@@ -18,6 +18,7 @@ STRATEGY_DISPLAY_NAMES = {
     "breakout": "Breakout",
     "macd": "MACD",
     "goslin_momentum": "Goslin Momentum",
+    "market_profile": "Market Profile",
 }
 
 
