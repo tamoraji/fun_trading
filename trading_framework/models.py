@@ -88,6 +88,7 @@ class AppSettings:
     market_session: Optional[MarketSession] = None
     signal_history: Optional[SignalHistorySettings] = None
     strategies: List[StrategySettings] = field(default_factory=list)
+    risk: Optional[Dict[str, Any]] = None
 
     @property
     def all_strategies(self) -> List[StrategySettings]:

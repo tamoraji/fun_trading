@@ -63,11 +63,19 @@ def _run_backtest(settings) -> int:
     return 0
 
 
+def _create_risk_manager(settings):
+    from .risk import RiskManager, RiskSettings, NullRiskManager
+    if not settings.risk:
+        return NullRiskManager()
+    return RiskManager(RiskSettings(**settings.risk))
+
+
 def build_engine_from_settings(settings, pretty: bool = False) -> TradingEngine:
     provider = create_market_data_provider(settings.market_data)
     strategies = [create_strategy(s) for s in settings.all_strategies]
     notifiers = create_notifiers(settings.notifiers)
     history = create_signal_history(settings.signal_history)
+    risk_manager = _create_risk_manager(settings)
     if pretty:
         from .prettylog import PrettyLogger
         logger = PrettyLogger()
@@ -80,6 +88,7 @@ def build_engine_from_settings(settings, pretty: bool = False) -> TradingEngine:
         notifiers=notifiers,
         history=history,
         logger=logger,
+        risk_manager=risk_manager,
     )
 
 

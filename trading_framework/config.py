@@ -28,6 +28,12 @@ def load_settings(path: str | Path) -> AppSettings:
     notifiers = _load_notifiers(raw.get("notifiers", [{"type": "console"}]))
     signal_history = _load_signal_history(raw.get("signal_history"))
 
+    risk = raw.get("risk")
+    if isinstance(risk, dict):
+        risk_config = dict(risk)
+    else:
+        risk_config = None
+
     return AppSettings(
         symbols=symbols,
         poll_interval_seconds=poll_interval_seconds,
@@ -37,6 +43,7 @@ def load_settings(path: str | Path) -> AppSettings:
         market_session=market_session,
         signal_history=signal_history,
         strategies=strategies,
+        risk=risk_config,
     )
 
 

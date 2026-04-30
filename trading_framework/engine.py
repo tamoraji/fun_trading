@@ -8,6 +8,7 @@ from .data import MarketDataProvider
 from .history import SignalHistory, NullHistory
 from .models import AppSettings, HOLD, Signal
 from .notifiers import Notifier
+from .risk import NullRiskManager
 from .strategy import Strategy
 
 
@@ -23,12 +24,14 @@ class TradingEngine:
         sleeper: Callable[[float], None] | None = None,
         logger: Callable[[str], None] | None = None,
         strategies: List[Strategy] | None = None,
+        risk_manager=None,
     ):
         self.settings = settings
         self.provider = provider
         self.strategies = strategies or ([strategy] if strategy else [])
         self.notifiers = notifiers or []
         self.history = history or NullHistory()
+        self.risk_manager = risk_manager or NullRiskManager()
         self.clock = clock or (lambda: datetime.now(timezone.utc))
         self.sleeper = sleeper or time.sleep
         self.logger = logger or print
@@ -65,6 +68,14 @@ class TradingEngine:
 
                 if signal.action == HOLD:
                     self.logger(f"[hold] {symbol}/{signal.strategy_name}: {signal.reason}")
+                    holds += 1
+                    continue
+
+                # Run through risk filters
+                signal = self.risk_manager.evaluate(signal, bars)
+                if signal.action == HOLD:
+                    risk_filter = signal.details.get("risk_filter", "unknown")
+                    self.logger(f"[risk] {symbol}/{signal.strategy_name}: blocked by {risk_filter} — {signal.reason}")
                     holds += 1
                     continue
 
