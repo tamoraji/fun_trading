@@ -20,6 +20,7 @@ from .models import (
 class InteractiveResult:
     settings: AppSettings
     run_once: bool
+    backtest: bool = False
 
 STRATEGY_INFO = {
     "moving_average_crossover": {
@@ -328,15 +329,33 @@ def run_interactive_setup() -> InteractiveResult:
     _print("How would you like to run?")
     _print("  1. Run once (analyze now and exit)")
     _print("  2. Monitor continuously (poll every {0}s)".format(poll_seconds))
-    _print("  3. Cancel")
+    _print("  3. Backtest (replay historical data)")
+    _print("  4. Cancel")
     run_choice = _ask("Choose", "1")
-    if run_choice == "3":
+    if run_choice == "4":
         _print("Setup cancelled.")
         raise SystemExit(0)
-    run_once = run_choice != "2"
+
+    is_backtest = run_choice == "3"
+    run_once = run_choice not in ("2", "3")
+
+    # Backtest-specific config
+    if is_backtest:
+        _print()
+        _print("How much history to backtest?")
+        _print("  1. 1 year")
+        _print("  2. 2 years")
+        _print("  3. 5 years")
+        bt_choice = _ask("Choose", "1")
+        bt_lookbacks = {"1": "1y", "2": "2y", "3": "5y"}
+        lookback = bt_lookbacks.get(bt_choice, "1y")
+        bar_interval = "1d"
+        _print(f"  -> Backtesting {lookback} of daily bars")
 
     _print()
-    if run_once:
+    if is_backtest:
+        _print("Running backtest...")
+    elif run_once:
         _print("Running analysis...")
     else:
         _print("Starting continuous monitoring... (press Ctrl+C to stop)")
@@ -362,7 +381,7 @@ def run_interactive_setup() -> InteractiveResult:
         signal_history=signal_history,
         strategies=strategy_settings_list,
     )
-    return InteractiveResult(settings=settings, run_once=run_once)
+    return InteractiveResult(settings=settings, run_once=run_once, backtest=is_backtest)
 
 
 def _save_config_file(

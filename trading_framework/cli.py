@@ -12,6 +12,47 @@ from .strategy import create_strategy
 from .structlog import StructuredLogger
 
 
+def _run_backtest(settings) -> int:
+    from .backtest import run_backtest
+    from .metrics import compute_metrics, format_report, format_comparison
+
+    provider = create_market_data_provider(settings.market_data)
+    strategies_list = [create_strategy(s) for s in settings.all_strategies]
+
+    all_results = []
+    for symbol in settings.symbols:
+        print(f"  Fetching data for {symbol}...")
+        try:
+            bars = provider.fetch_bars(symbol, settings.market_data)
+        except Exception as exc:
+            print(f"  ERROR fetching {symbol}: {exc}")
+            continue
+
+        for strategy in strategies_list:
+            bt_result = run_backtest(strategy, symbol, bars)
+            metrics = compute_metrics(bt_result.trades, bt_result.bars)
+
+            start_date = bars[0].timestamp if bars else None
+            end_date = bars[-1].timestamp if bars else None
+
+            report = format_report(
+                symbol=symbol,
+                strategy_name=strategy.name,
+                metrics=metrics,
+                num_signals=len(bt_result.signals),
+                num_bars=len(bars),
+                start_date=start_date,
+                end_date=end_date,
+            )
+            print(report)
+            all_results.append((f"{symbol}/{strategy.name}", metrics))
+
+    if len(all_results) > 1:
+        print(format_comparison(all_results))
+
+    return 0
+
+
 def build_engine_from_settings(settings, pretty: bool = False) -> TradingEngine:
     provider = create_market_data_provider(settings.market_data)
     strategies = [create_strategy(s) for s in settings.all_strategies]
@@ -63,6 +104,10 @@ def main(argv=None) -> int:
     if use_interactive:
         from .interactive import run_interactive_setup
         result = run_interactive_setup()
+
+        if result.backtest:
+            return _run_backtest(result.settings)
+
         engine = build_engine_from_settings(result.settings, pretty=True)
         if result.run_once or args.once:
             engine.run_cycle()
