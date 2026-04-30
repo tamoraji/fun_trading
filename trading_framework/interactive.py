@@ -710,6 +710,16 @@ def run_interactive_setup() -> InteractiveResult:
     _print("     Full control over every parameter.")
     _print()
     path = _ask("Choose", "1")
+    if path == "?":
+        _print()
+        _print("  Quick Start:  We pick the best strategies and settings for your")
+        _print("                symbols automatically. Just 2-3 clicks and you're trading.")
+        _print("  Presets:      Choose a trading style (day trader, swing trader, etc.)")
+        _print("                and we configure everything to match.")
+        _print("  Advanced:     You control every parameter — strategies, intervals,")
+        _print("                risk filters, paper trading. Type ? on any option for help.")
+        _print()
+        path = _ask("Choose", "1")
     _print()
 
     if path == "2":
