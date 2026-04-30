@@ -216,26 +216,31 @@ def _print(message: str = "") -> None:
     print(message)
 
 
-def _ask(prompt: str, default: str = "") -> str:
+def _ask(prompt: str, default: str = "", help_text: str = "") -> str:
     if default:
         raw = _input(f"{prompt} [{default}]: ").strip()
-        return raw if raw else default
-    return _input(f"{prompt}: ").strip()
+    else:
+        raw = _input(f"{prompt}: ").strip()
+    if raw == "?" and help_text:
+        _print(f"    {help_text}")
+        return _ask(prompt, default, help_text)
+    if raw == "?" and not help_text:
+        _print("    No help available for this option.")
+        return _ask(prompt, default, help_text)
+    return raw if raw else default
 
 
-def _ask_number(prompt: str, default, type_fn=int):
-    raw = _ask(prompt, str(default))
-    if raw == "?":
-        return default  # help handled by caller
+def _ask_number(prompt: str, default, type_fn=int, help_text: str = ""):
+    raw = _ask(prompt, str(default), help_text=help_text)
     try:
         return type_fn(raw)
     except ValueError:
-        _print(f"  Invalid number, using default: {default}")
+        _print(f"  Invalid. Enter a number (e.g. {default}).")
         return default
 
 
-def _ask_int(prompt: str, default: int) -> int:
-    return _ask_number(prompt, default, int)
+def _ask_int(prompt: str, default: int, help_text: str = "") -> int:
+    return _ask_number(prompt, default, int, help_text=help_text)
 
 
 def _parse_strategy_choices(raw: str, max_count: int) -> List[int]:
@@ -560,6 +565,13 @@ def _advanced_setup(symbols: List[str]) -> InteractiveResult:
         _print()
 
     choice = _ask("Choose strategy number(s)", "1")
+    if choice.strip() == "?":
+        _print("  Enter a number (1-6) or multiple separated by commas (e.g. 1,2,4).")
+        _print("  Each strategy analyzes the market differently. You can combine them")
+        _print("  to get signals from multiple perspectives. See docs/strategy-manual.md")
+        _print("  for detailed explanations of each strategy.")
+        _print()
+        choice = _ask("Choose strategy number(s)", "1")
     selected_indices = _parse_strategy_choices(choice, len(strategy_keys))
     if not selected_indices:
         selected_indices = [0]
@@ -579,20 +591,13 @@ def _advanced_setup(symbols: List[str]) -> InteractiveResult:
     for strat in selected_strategies:
         info = strat["info"]
         if len(selected_strategies) > 1:
-            _print(f"Configure {info['display_name']}:")
+            _print(f"Configure {info['display_name']} (Enter for defaults, ? for help):")
         else:
             _print("Configure strategy parameters (Enter for defaults, ? for help):")
         for param in info["params"]:
             type_fn = param.get("type", int)
-            raw = _ask(f"  {param['prompt']}", str(param["default"]))
-            if raw == "?":
-                _print(f"    Help: {param.get('help', 'No help available.')}")
-                raw = _ask(f"  {param['prompt']}", str(param["default"]))
-            try:
-                value = type_fn(raw)
-            except ValueError:
-                value = param["default"]
-                _print(f"  Invalid, using default: {value}")
+            help_text = param.get("help", "")
+            value = _ask_number(f"  {param['prompt']}", param["default"], type_fn, help_text=help_text)
             strat["params"][param["name"]] = value
         _print()
 
@@ -601,14 +606,19 @@ def _advanced_setup(symbols: List[str]) -> InteractiveResult:
     # --- Bar Interval ---
     _print("Bar interval for price data:")
     _print(f"  Options: {', '.join(BAR_INTERVALS)}")
-    bar_interval = _ask("Bar interval", "5m")
+    bar_interval = _ask("Bar interval", "5m",
+                        help_text="How often each price bar represents. 5m = 5-minute candles, "
+                                  "1h = hourly, 1d = daily. Shorter = more data points but noisier. "
+                                  "Day traders use 1m-15m, swing traders use 1d.")
     if bar_interval not in BAR_INTERVALS:
-        _print("  Unknown interval, using: 5m")
+        _print(f"  Unknown interval '{bar_interval}', using: 5m")
         bar_interval = "5m"
     _print()
 
     # --- Poll Interval ---
-    poll_seconds = _ask_int("Poll interval (seconds)", 300)
+    poll_seconds = _ask_int("Poll interval in seconds (e.g. 300 = 5 min)", 300,
+                            help_text="How often to check for new data, in seconds. "
+                                      "300 = every 5 minutes, 3600 = hourly, 86400 = daily.")
     if poll_seconds < 10:
         _print("  Minimum 10 seconds. Using 10.")
         poll_seconds = 10
@@ -628,16 +638,20 @@ def _advanced_setup(symbols: List[str]) -> InteractiveResult:
         pos = _ask_yes_no("  Track positions (block duplicate signals)?", True)
         if pos:
             risk_config["position_aware"] = True
-        sl = _ask_number("  Stop-loss % (0=off)", 5.0, float)
+        sl = _ask_number("  Stop-loss % (0=off)", 5.0, float,
+                         help_text="Auto-calculate a stop-loss price on each signal. E.g. 5 = stop-loss 5% below entry for BUY.")
         if sl > 0:
             risk_config["stop_loss_pct"] = sl
-        tp = _ask_number("  Take-profit % (0=off)", 10.0, float)
+        tp = _ask_number("  Take-profit % (0=off)", 10.0, float,
+                         help_text="Auto-calculate a take-profit price. E.g. 10 = take profit 10% above entry for BUY.")
         if tp > 0:
             risk_config["take_profit_pct"] = tp
-        cd = _ask_int("  Cooldown between signals (seconds, 0=off)", 0)
+        cd = _ask_int("  Cooldown between signals (seconds, 0=off)", 0,
+                      help_text="Minimum time between signals for the same symbol. Prevents rapid-fire signals. 0 = no cooldown.")
         if cd > 0:
             risk_config["cooldown_seconds"] = cd
-        dl = _ask_int("  Max signals per symbol per day (0=unlimited)", 0)
+        dl = _ask_int("  Max signals per symbol per day (0=unlimited)", 0,
+                      help_text="Cap the number of signals per symbol per day. Prevents overtrading. 0 = no limit.")
         if dl > 0:
             risk_config["max_signals_per_day"] = dl
         if not risk_config:
@@ -649,8 +663,10 @@ def _advanced_setup(symbols: List[str]) -> InteractiveResult:
     paper_cash = 100_000.0
     paper_size_pct = 10.0
     if paper_trading:
-        paper_cash = _ask_number("  Starting cash ($)", 100_000.0, float)
-        paper_size_pct = _ask_number("  Position size (% per trade)", 10.0, float)
+        paper_cash = _ask_number("  Starting cash ($)", 100_000.0, float,
+                                 help_text="How much virtual money to start with.")
+        paper_size_pct = _ask_number("  Position size (% per trade)", 10.0, float,
+                                     help_text="What percentage of your portfolio to risk per trade. 10 = 10% of total equity per position.")
     _print()
 
     # --- Save Config ---
@@ -709,17 +725,14 @@ def run_interactive_setup() -> InteractiveResult:
     _print("  3. Advanced Setup")
     _print("     Full control over every parameter.")
     _print()
-    path = _ask("Choose", "1")
-    if path == "?":
-        _print()
-        _print("  Quick Start:  We pick the best strategies and settings for your")
-        _print("                symbols automatically. Just 2-3 clicks and you're trading.")
-        _print("  Presets:      Choose a trading style (day trader, swing trader, etc.)")
-        _print("                and we configure everything to match.")
-        _print("  Advanced:     You control every parameter — strategies, intervals,")
-        _print("                risk filters, paper trading. Type ? on any option for help.")
-        _print()
-        path = _ask("Choose", "1")
+    path = _ask("Choose", "1",
+                help_text="Quick Start = auto-configure everything (2-3 clicks). "
+                          "Presets = choose a trading style. Advanced = full control.")
+    # Handle inputs like "1?" by stripping ?
+    path = path.replace("?", "").strip() or "1"
+    if path not in ("1", "2", "3"):
+        _print(f"  Unknown option '{path}', using Quick Start.")
+        path = "1"
     _print()
 
     if path == "2":
