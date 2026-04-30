@@ -17,6 +17,7 @@ STRATEGY_DISPLAY_NAMES = {
     "rsi": "RSI",
     "breakout": "Breakout",
     "macd": "MACD",
+    "goslin_momentum": "Goslin Momentum",
 }
 
 
