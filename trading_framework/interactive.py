@@ -319,6 +319,15 @@ def run_interactive_setup() -> InteractiveResult:
         cache_ttl = _ask_int("  Cache TTL in seconds (how long before re-fetching)", 300)
     _print()
 
+    # --- Paper Trading ---
+    paper_trading = _ask_yes_no("Enable paper trading? (simulated execution)", False)
+    paper_cash = 100_000.0
+    paper_size_pct = 10.0
+    if paper_trading:
+        paper_cash = _ask_number("  Starting cash ($)", 100_000.0, float)
+        paper_size_pct = _ask_number("  Position size (% of portfolio per trade)", 10.0, float)
+    _print()
+
     # --- Signal History ---
     use_history = _ask_yes_no("Save signal history to file?", True)
     signal_history: Optional[SignalHistorySettings] = None
@@ -362,6 +371,7 @@ def run_interactive_setup() -> InteractiveResult:
     if risk_config:
         for k, v in risk_config.items():
             _print(f"    {k}: {v}")
+    _print(f"  Paper trading: {'$' + f'{paper_cash:,.0f}' + f' ({paper_size_pct}% per trade)' if paper_trading else 'Disabled'}")
     _print(f"  Data cache:    {'Enabled (TTL ' + str(cache_ttl) + 's)' if cache_enabled else 'Disabled'}")
     _print(f"  Signal history: {'Enabled' if signal_history else 'Disabled'}")
     _print("-" * 60)
@@ -425,6 +435,9 @@ def run_interactive_setup() -> InteractiveResult:
         cache_enabled=cache_enabled,
         cache_dir=cache_dir,
         cache_ttl_seconds=cache_ttl,
+        paper_trading=paper_trading,
+        paper_starting_cash=paper_cash,
+        paper_position_size_pct=paper_size_pct,
     )
     return InteractiveResult(settings=settings, run_once=run_once, backtest=is_backtest)
 

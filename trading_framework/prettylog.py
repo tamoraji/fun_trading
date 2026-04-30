@@ -61,6 +61,16 @@ class PrettyLogger:
             print(f"  {timestamp}  {detail}")
             return
 
+        if message.startswith("[paper]"):
+            detail = message.replace("[paper] ", "")
+            print(f"  {timestamp}  [PAPER] {detail}")
+            return
+
+        if message.startswith("[portfolio]"):
+            detail = message.replace("[portfolio] ", "")
+            print(f"  {timestamp}  [PORTFOLIO] {detail}")
+            return
+
         if message.startswith("[risk]"):
             detail = message.replace("[risk] ", "")
             print(f"  {timestamp}  [RISK] {detail}")

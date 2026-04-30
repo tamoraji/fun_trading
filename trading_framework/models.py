@@ -92,6 +92,10 @@ class AppSettings:
     cache_enabled: bool = False
     cache_dir: str = ".cache"
     cache_ttl_seconds: int = 300
+    paper_trading: bool = False
+    paper_starting_cash: float = 100_000.0
+    paper_position_size_pct: float = 10.0
+    paper_portfolio_path: str = "paper_portfolio.json"
 
     @property
     def all_strategies(self) -> List[StrategySettings]:

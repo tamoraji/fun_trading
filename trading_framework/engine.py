@@ -25,6 +25,7 @@ class TradingEngine:
         logger: Callable[[str], None] | None = None,
         strategies: List[Strategy] | None = None,
         risk_manager=None,
+        portfolio=None,
     ):
         self.settings = settings
         self.provider = provider
@@ -32,6 +33,7 @@ class TradingEngine:
         self.notifiers = notifiers or []
         self.history = history or NullHistory()
         self.risk_manager = risk_manager or NullRiskManager()
+        self.portfolio = portfolio
         self.clock = clock or (lambda: datetime.now(timezone.utc))
         self.sleeper = sleeper or time.sleep
         self.logger = logger or print
@@ -97,11 +99,25 @@ class TradingEngine:
                 self.logger(f"[signal] {symbol}/{signal.strategy_name}: {signal.action} at {signal.price:.2f}")
                 emitted.append(signal)
 
+                if self.portfolio:
+                    order = self.portfolio.execute(signal)
+                    if order:
+                        pnl_str = f" P&L: ${order.pnl:,.2f}" if order.pnl is not None else ""
+                        self.logger(f"[paper] {symbol}: {order.action} {order.quantity:.4f} @ ${order.price:.2f}{pnl_str}")
+
         elapsed = time.monotonic() - started
         self.logger(
             f"[cycle_end] signals={len(emitted)} holds={holds} errors={errors} "
             f"elapsed={elapsed:.3f}s"
         )
+
+        if self.portfolio:
+            self.logger(
+                f"[portfolio] cash=${self.portfolio.cash:,.2f} "
+                f"positions={len(self.portfolio.positions)} "
+                f"realized_pnl=${self.portfolio.realized_pnl():,.2f}"
+            )
+
         return emitted
 
     def run_forever(self) -> None:
