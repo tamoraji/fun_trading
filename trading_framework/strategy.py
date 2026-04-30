@@ -164,6 +164,182 @@ class RSIStrategy(Strategy):
         )
 
 
+class BreakoutStrategy(Strategy):
+    name = "breakout"
+
+    def __init__(self, lookback: int = 20, volume_factor: float = 1.5):
+        if lookback <= 0:
+            raise ValueError("lookback must be a positive integer.")
+        self.lookback = lookback
+        self.volume_factor = volume_factor
+
+    def evaluate(self, symbol: str, bars: List[PriceBar]) -> Signal:
+        min_bars = self.lookback + 1
+        latest_bar = bars[-1]
+
+        if len(bars) < min_bars:
+            return Signal(
+                symbol=symbol,
+                action=HOLD,
+                price=latest_bar.close,
+                timestamp=latest_bar.timestamp,
+                reason="Not enough history to evaluate breakout.",
+                strategy_name=self.name,
+                details={"bars_available": len(bars), "bars_needed": min_bars},
+            )
+
+        window = bars[-min_bars:-1]  # previous `lookback` bars
+        channel_high = max(b.high for b in window)
+        channel_low = min(b.low for b in window)
+        current_close = latest_bar.close
+        current_volume = latest_bar.volume
+        average_volume = _average([b.volume for b in window])
+
+        volume_confirmed = (
+            self.volume_factor == 0
+            or current_volume >= self.volume_factor * average_volume
+        )
+
+        details = {
+            "channel_high": channel_high,
+            "channel_low": channel_low,
+            "current_close": current_close,
+            "current_volume": current_volume,
+            "average_volume": round(average_volume, 6),
+            "volume_confirmed": volume_confirmed,
+            "lookback": self.lookback,
+        }
+
+        if current_close > channel_high and volume_confirmed:
+            return Signal(
+                symbol=symbol,
+                action=BUY,
+                price=latest_bar.close,
+                timestamp=latest_bar.timestamp,
+                reason="Price broke above channel high with volume confirmation.",
+                strategy_name=self.name,
+                details=details,
+            )
+
+        if current_close < channel_low and volume_confirmed:
+            return Signal(
+                symbol=symbol,
+                action=SELL,
+                price=latest_bar.close,
+                timestamp=latest_bar.timestamp,
+                reason="Price broke below channel low with volume confirmation.",
+                strategy_name=self.name,
+                details=details,
+            )
+
+        return Signal(
+            symbol=symbol,
+            action=HOLD,
+            price=latest_bar.close,
+            timestamp=latest_bar.timestamp,
+            reason="No confirmed breakout.",
+            strategy_name=self.name,
+            details=details,
+        )
+
+
+class MACDStrategy(Strategy):
+    name = "macd"
+
+    def __init__(
+        self,
+        fast_period: int = 12,
+        slow_period: int = 26,
+        signal_period: int = 9,
+    ):
+        if fast_period <= 0 or slow_period <= 0 or signal_period <= 0:
+            raise ValueError("All MACD periods must be positive integers.")
+        if fast_period >= slow_period:
+            raise ValueError("fast_period must be less than slow_period.")
+
+        self.fast_period = fast_period
+        self.slow_period = slow_period
+        self.signal_period = signal_period
+
+    def evaluate(self, symbol: str, bars: List[PriceBar]) -> Signal:
+        min_bars = self.slow_period + self.signal_period
+        latest_bar = bars[-1]
+
+        if len(bars) < min_bars:
+            return Signal(
+                symbol=symbol,
+                action=HOLD,
+                price=latest_bar.close,
+                timestamp=latest_bar.timestamp,
+                reason="Not enough history to compute MACD.",
+                strategy_name=self.name,
+                details={"bars_available": len(bars), "bars_needed": min_bars},
+            )
+
+        closes = [bar.close for bar in bars]
+
+        fast_ema_values = _compute_ema(closes, self.fast_period)
+        slow_ema_values = _compute_ema(closes, self.slow_period)
+
+        # MACD line: fast EMA - slow EMA (aligned to slow EMA start)
+        offset = self.slow_period - self.fast_period
+        macd_line = [
+            fast_ema_values[offset + i] - slow_ema_values[i]
+            for i in range(len(slow_ema_values))
+        ]
+
+        signal_line_values = _compute_ema(macd_line, self.signal_period)
+
+        current_macd = macd_line[-1]
+        current_signal = signal_line_values[-1]
+        previous_macd = macd_line[-2]
+        previous_signal = signal_line_values[-2]
+        histogram = current_macd - current_signal
+
+        details = {
+            "macd": round(current_macd, 6),
+            "signal_line": round(current_signal, 6),
+            "histogram": round(histogram, 6),
+            "previous_macd": round(previous_macd, 6),
+            "previous_signal": round(previous_signal, 6),
+            "fast_period": self.fast_period,
+            "slow_period": self.slow_period,
+            "signal_period": self.signal_period,
+        }
+
+        if previous_macd <= previous_signal and current_macd > current_signal:
+            return Signal(
+                symbol=symbol,
+                action=BUY,
+                price=latest_bar.close,
+                timestamp=latest_bar.timestamp,
+                reason="MACD line crossed above signal line.",
+                strategy_name=self.name,
+                details=details,
+            )
+
+        if previous_macd >= previous_signal and current_macd < current_signal:
+            return Signal(
+                symbol=symbol,
+                action=SELL,
+                price=latest_bar.close,
+                timestamp=latest_bar.timestamp,
+                reason="MACD line crossed below signal line.",
+                strategy_name=self.name,
+                details=details,
+            )
+
+        return Signal(
+            symbol=symbol,
+            action=HOLD,
+            price=latest_bar.close,
+            timestamp=latest_bar.timestamp,
+            reason="No MACD crossover on the latest bar.",
+            strategy_name=self.name,
+            details=details,
+        )
+
+
 def create_strategy(settings: StrategySettings) -> Strategy:
     if settings.name == "moving_average_crossover":
         return MovingAverageCrossoverStrategy(
@@ -175,6 +351,17 @@ def create_strategy(settings: StrategySettings) -> Strategy:
             period=int(settings.params.get("period", 14)),
             oversold=int(settings.params.get("oversold", 30)),
             overbought=int(settings.params.get("overbought", 70)),
+        )
+    if settings.name == "breakout":
+        return BreakoutStrategy(
+            lookback=int(settings.params.get("lookback", 20)),
+            volume_factor=float(settings.params.get("volume_factor", 1.5)),
+        )
+    if settings.name == "macd":
+        return MACDStrategy(
+            fast_period=int(settings.params.get("fast_period", 12)),
+            slow_period=int(settings.params.get("slow_period", 26)),
+            signal_period=int(settings.params.get("signal_period", 9)),
         )
     raise ValueError(f"Unsupported strategy: {settings.name}")
 
@@ -200,6 +387,16 @@ def _compute_rsi(closes: List[float], period: int) -> float:
         return 100.0
     rs = avg_gain / avg_loss
     return 100.0 - (100.0 / (1.0 + rs))
+
+
+def _compute_ema(values: List[float], period: int) -> List[float]:
+    """Compute EMA for a list of values. Seed with SMA of first *period* values."""
+    multiplier = 2.0 / (period + 1)
+    sma = sum(values[:period]) / period
+    ema_values = [sma]
+    for v in values[period:]:
+        ema_values.append(v * multiplier + ema_values[-1] * (1 - multiplier))
+    return ema_values
 
 
 def _average(values: Iterable[float]) -> float:
