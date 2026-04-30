@@ -119,6 +119,26 @@ class InteractiveSetupTests(unittest.TestCase):
         result = self._run_with_inputs(inputs)
         self.assertFalse(result.run_once)
 
+    def test_backtest_mode(self):
+        inputs = [
+            "",      # symbols
+            "",      # strategy
+            "",      # short_window
+            "",      # long_window
+            "",      # bar_interval
+            "",      # poll_interval
+            "",      # market session
+            "",      # signal history
+            "",      # history path
+            "",      # save config
+            "3",     # Backtest
+            "2",     # 2 years
+        ]
+        result = self._run_with_inputs(inputs)
+        self.assertTrue(result.backtest)
+        self.assertEqual("2y", result.settings.market_data.lookback)
+        self.assertEqual("1d", result.settings.market_data.bar_interval)
+
     def test_cancel_exits(self):
         inputs = [
             "",      # symbols
@@ -131,7 +151,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # signal history
             "",      # history path
             "",      # save config
-            "3",     # Cancel
+            "4",     # Cancel
         ]
         with self.assertRaises(SystemExit):
             self._run_with_inputs(inputs)
