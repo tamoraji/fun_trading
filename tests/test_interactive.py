@@ -86,7 +86,7 @@ class QuickStartTests(_WizardTestCase):
         inputs = [
             "AAPL",
             "1",
-            "5",  # Cancel
+            "6",  # Cancel
         ]
         with self.assertRaises(SystemExit):
             self._run(inputs)
@@ -214,7 +214,7 @@ class AdvancedTests(_WizardTestCase):
             "n",     # no risk
             "n",     # no paper
             "n",     # don't save
-            "5",     # Cancel
+            "6",     # Cancel
         ]
         with self.assertRaises(SystemExit):
             self._run(inputs)

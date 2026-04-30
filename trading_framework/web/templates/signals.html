@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Signals{% endblock %}
+{% block content %}
+<h1 style="margin-bottom: 16px; font-size: 20px;">Signal History</h1>
+
+<div class="card">
+    {% if signals %}
+    <table>
+        <tr><th>Timestamp</th><th>Symbol</th><th>Action</th><th>Price</th><th>Strategy</th><th>Reason</th></tr>
+        {% for s in signals|reverse %}
+        <tr>
+            <td>{{ s.timestamp[:19] }}</td>
+            <td><strong>{{ s.symbol }}</strong></td>
+            <td><span class="badge {% if s.action == 'BUY' %}badge-buy{% elif s.action == 'SELL' %}badge-sell{% else %}badge-hold{% endif %}">{{ s.action }}</span></td>
+            <td>{{ "%.2f"|format(s.price) }}</td>
+            <td>{{ s.strategy_name }}</td>
+            <td style="max-width: 400px;">{{ s.reason }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p class="neutral">No signals recorded yet. Run the framework to generate signals.</p>
+    {% endif %}
+</div>
+{% endblock %}

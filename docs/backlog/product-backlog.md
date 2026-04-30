@@ -247,7 +247,7 @@ Initial stories:
 - UI-003 Add TUI signal history browser with filtering and search
 
 **Web Dashboard — for browser-based monitoring and team access:**
-- UI-004 Add web-based dashboard (Flask/FastAPI + simple frontend)
+- ~~UI-004 Add web-based dashboard (FastAPI + Jinja2 + Plotly)~~ DONE
 - UI-005 Add real-time P&L and open positions display
 - UI-006 Add interactive price charts with indicator overlays
 - UI-007 Add strategy performance comparison views
@@ -264,6 +264,23 @@ Initial stories:
 - UI-014 Extract service layer API that all UIs consume (decouple UI from engine)
 - UI-015 Add mobile-responsive design for web dashboard
 - UI-010 Add API endpoints for external tool integration
+
+### EPIC-14 AI and Intelligence Features
+
+Goal: leverage AI/LLM capabilities for trade reasoning, performance monitoring, and smart automation.
+
+Initial stories:
+
+- AI-001 Add AI-powered trade reasoning (LLM explains WHY a signal was generated in plain English)
+- AI-002 Add strategy backtesting templates ("test on top 10 S&P stocks over 5 years" in one click)
+- AI-003 Add backtesting leaderboard (auto-rank strategies across time periods and symbols)
+- AI-004 Add correlation dashboard (show which strategies agree/disagree in real-time)
+- AI-005 Add risk-adjusted auto-sizing (size positions based on strategy confidence + portfolio heat)
+- AI-006 Add alert fatigue management (smart notification batching — group related signals)
+- AI-007 Add replay mode (step through historical data bar-by-bar in TUI, flight simulator for trading)
+- AI-008 Add multi-asset portfolio (stocks + crypto + forex with currency conversion)
+- AI-009 Add performance decay detection (alert when live performance diverges from backtest)
+- AI-010 Add strategy marketplace (share/import strategy configs as JSON presets)
 
 ### EPIC-13 Infrastructure and Deployment
 
