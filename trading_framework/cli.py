@@ -153,7 +153,17 @@ def main(argv=None) -> int:
         action="store_true",
         help="Launch TUI dashboard for live visual monitoring.",
     )
+    parser.add_argument(
+        "--web",
+        action="store_true",
+        help="Launch web dashboard.",
+    )
     args = parser.parse_args(argv)
+
+    if args.web:
+        from .web.app import start_server
+        start_server()
+        return 0
 
     use_interactive = args.interactive or (args.config is None and sys.stdin.isatty())
 
@@ -163,6 +173,11 @@ def main(argv=None) -> int:
 
         if result.backtest:
             return _run_backtest(result.settings)
+
+        if result.web:
+            from .web.app import start_server
+            start_server()
+            return 0
 
         if result.tui or args.tui:
             from .tui import run_tui

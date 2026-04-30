@@ -23,6 +23,7 @@ class InteractiveResult:
     run_once: bool
     backtest: bool = False
     tui: bool = False
+    web: bool = False
 
 
 # ---------------------------------------------------------------------------
@@ -313,22 +314,24 @@ def _compute_bars_needed(strategies: List[Dict[str, Any]]) -> int:
 # Run mode selection
 # ---------------------------------------------------------------------------
 
-def _ask_run_mode(poll_seconds: int) -> tuple[bool, bool, bool]:
-    """Returns (run_once, backtest, tui)."""
+def _ask_run_mode(poll_seconds: int) -> tuple[bool, bool, bool, bool]:
+    """Returns (run_once, backtest, tui, web)."""
     _print("How would you like to run?")
     _print("  1. Run once (analyze now and exit)")
     _print("  2. Monitor continuously (poll every {0}s)".format(poll_seconds))
     _print("  3. Backtest (replay historical data)")
     _print("  4. TUI Dashboard (live visual monitoring)")
-    _print("  5. Cancel")
+    _print("  5. Web Dashboard (browser)")
+    _print("  6. Cancel")
     run_choice = _ask("Choose", "1")
-    if run_choice == "5":
+    if run_choice == "6":
         _print("Setup cancelled.")
         raise SystemExit(0)
     is_backtest = run_choice == "3"
     is_tui = run_choice == "4"
-    run_once = run_choice not in ("2", "3", "4")
-    return run_once, is_backtest, is_tui
+    is_web = run_choice == "5"
+    run_once = run_choice not in ("2", "3", "4", "5")
+    return run_once, is_backtest, is_tui, is_web
 
 
 def _handle_backtest_config() -> tuple[str, str]:
@@ -461,7 +464,7 @@ def _quick_start(symbols: List[str]) -> InteractiveResult:
     _print("  Cache: enabled | Signal history: enabled")
     _print()
 
-    run_once, is_backtest, is_tui = _ask_run_mode(poll_seconds)
+    run_once, is_backtest, is_tui, is_web = _ask_run_mode(poll_seconds)
 
     lookback_override = None
     if is_backtest:
@@ -473,7 +476,7 @@ def _quick_start(symbols: List[str]) -> InteractiveResult:
         risk_config=risk_config, cache_enabled=True, paper_trading=True,
         paper_cash=100_000.0, paper_size_pct=10.0, lookback_override=lookback_override,
     )
-    return InteractiveResult(settings=settings, run_once=run_once, backtest=is_backtest, tui=is_tui)
+    return InteractiveResult(settings=settings, run_once=run_once, backtest=is_backtest, tui=is_tui, web=is_web)
 
 
 # ---------------------------------------------------------------------------
@@ -531,9 +534,10 @@ def _preset_setup(symbols: List[str]) -> InteractiveResult:
         run_once = False
         is_backtest = True
         is_tui = False
+        is_web = False
         lookback_override, bar_interval = _handle_backtest_config()
     else:
-        run_once, is_backtest, is_tui = _ask_run_mode(poll_seconds)
+        run_once, is_backtest, is_tui, is_web = _ask_run_mode(poll_seconds)
         lookback_override = None
         if is_backtest:
             lookback_override, bar_interval = _handle_backtest_config()
@@ -545,7 +549,7 @@ def _preset_setup(symbols: List[str]) -> InteractiveResult:
         paper_cash=paper_cash, paper_size_pct=paper_size_pct,
         lookback_override=lookback_override,
     )
-    return InteractiveResult(settings=settings, run_once=run_once, backtest=is_backtest, tui=is_tui)
+    return InteractiveResult(settings=settings, run_once=run_once, backtest=is_backtest, tui=is_tui, web=is_web)
 
 
 # ---------------------------------------------------------------------------
@@ -683,7 +687,7 @@ def _advanced_setup(symbols: List[str]) -> InteractiveResult:
     _print()
 
     # --- Run Mode ---
-    run_once, is_backtest, is_tui = _ask_run_mode(poll_seconds)
+    run_once, is_backtest, is_tui, is_web = _ask_run_mode(poll_seconds)
     lookback_override = None
     if is_backtest:
         lookback_override, bar_interval = _handle_backtest_config()
@@ -695,7 +699,7 @@ def _advanced_setup(symbols: List[str]) -> InteractiveResult:
         paper_cash=paper_cash, paper_size_pct=paper_size_pct,
         lookback_override=lookback_override,
     )
-    return InteractiveResult(settings=settings, run_once=run_once, backtest=is_backtest, tui=is_tui)
+    return InteractiveResult(settings=settings, run_once=run_once, backtest=is_backtest, tui=is_tui, web=is_web)
 
 
 # ---------------------------------------------------------------------------

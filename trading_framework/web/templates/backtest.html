@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Backtest{% endblock %}
+{% block content %}
+<h1 style="margin-bottom: 16px; font-size: 20px;">Backtest</h1>
+
+<div class="card">
+    <h2>Run Backtest</h2>
+    <form method="post" action="/backtest/run">
+        <div>
+            <label style="font-size: 12px; color: #8b949e;">Symbol</label><br>
+            <input type="text" name="symbol" value="{{ form_symbol|default('AAPL') }}" placeholder="AAPL" style="width: 120px;">
+        </div>
+        <div>
+            <label style="font-size: 12px; color: #8b949e;">Strategy</label><br>
+            <select name="strategy">
+                {% for key, name in strategies.items() %}
+                <option value="{{ key }}" {% if form_strategy == key %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label style="font-size: 12px; color: #8b949e;">History</label><br>
+            <select name="lookback">
+                <option value="1y" {% if form_lookback == '1y' %}selected{% endif %}>1 Year</option>
+                <option value="2y" {% if form_lookback == '2y' %}selected{% endif %}>2 Years</option>
+                <option value="5y" {% if form_lookback == '5y' %}selected{% endif %}>5 Years</option>
+            </select>
+        </div>
+        <button type="submit">Run Backtest</button>
+    </form>
+</div>
+
+{% if error %}
+<div class="card" style="border-color: #f85149;">
+    <h2 style="color: #f85149;">Error</h2>
+    <p>{{ error }}</p>
+</div>
+{% endif %}
+
+{% if results %}
+<div class="grid-3" style="margin-top: 8px;">
+    <div class="card metric">
+        <div class="value {% if results.metrics.total_return.startswith('+') %}positive{% else %}negative{% endif %}">{{ results.metrics.total_return }}</div>
+        <div class="label">Total Return</div>
+    </div>
+    <div class="card metric">
+        <div class="value {% if results.metrics.buy_hold.startswith('+') %}positive{% else %}negative{% endif %}">{{ results.metrics.buy_hold }}</div>
+        <div class="label">Buy & Hold</div>
+    </div>
+    <div class="card metric">
+        <div class="value">{{ results.metrics.win_rate }}</div>
+        <div class="label">Win Rate ({{ results.metrics.num_trades }} trades)</div>
+    </div>
+</div>
+<div class="grid-3">
+    <div class="card metric">
+        <div class="value">{{ results.metrics.profit_factor }}</div>
+        <div class="label">Profit Factor</div>
+    </div>
+    <div class="card metric">
+        <div class="value negative">{{ results.metrics.max_drawdown }}</div>
+        <div class="label">Max Drawdown</div>
+    </div>
+    <div class="card metric">
+        <div class="value">{{ results.metrics.sharpe }}</div>
+        <div class="label">Sharpe Ratio</div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Price Chart — {{ results.symbol }} ({{ results.strategy }})</h2>
+    <p style="color: #8b949e; font-size: 12px; margin-bottom: 8px;">{{ results.start_date }} to {{ results.end_date }} ({{ results.num_bars }} bars)</p>
+    <div id="chart" class="chart-container"></div>
+    <script>
+        var chartData = {{ results.chart_data|safe }};
+        var traces = [
+            {x: chartData.dates, y: chartData.closes, type: 'scatter', name: 'Price', line: {color: '#58a6ff', width: 1.5}},
+            {x: chartData.buy_dates, y: chartData.buy_prices, mode: 'markers', name: 'BUY', marker: {color: '#3fb950', size: 10, symbol: 'triangle-up'}},
+            {x: chartData.sell_dates, y: chartData.sell_prices, mode: 'markers', name: 'SELL', marker: {color: '#f85149', size: 10, symbol: 'triangle-down'}},
+        ];
+        var layout = {
+            paper_bgcolor: '#161b22', plot_bgcolor: '#0d1117',
+            font: {color: '#c9d1d9'},
+            xaxis: {gridcolor: '#21262d'}, yaxis: {gridcolor: '#21262d', title: 'Price'},
+            margin: {t: 10, r: 20, b: 40, l: 60},
+            legend: {orientation: 'h', y: -0.15},
+        };
+        Plotly.newPlot('chart', traces, layout, {responsive: true});
+    </script>
+</div>
+
+<div class="card">
+    <h2>Trade Log</h2>
+    {% if results.trades %}
+    <table>
+        <tr><th>#</th><th>Entry Date</th><th>Side</th><th>Entry $</th><th>Exit $</th><th>P&L</th><th>Days</th></tr>
+        {% for t in results.trades %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ t.entry_date }}</td>
+            <td><span class="badge {% if t.action == 'BUY' %}badge-buy{% else %}badge-sell{% endif %}">{{ t.action }}</span></td>
+            <td>{{ t.entry_price }}</td>
+            <td>{{ t.exit_price }}</td>
+            <td><span class="{% if t.pnl.startswith('+') %}positive{% else %}negative{% endif %}">{{ t.pnl }}</span></td>
+            <td>{{ t.days }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p class="neutral">No trades were generated.</p>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}
