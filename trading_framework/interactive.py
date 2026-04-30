@@ -311,6 +311,14 @@ def run_interactive_setup() -> InteractiveResult:
             risk_config = None
     _print()
 
+    # --- Data Cache ---
+    cache_enabled = _ask_yes_no("Enable data caching? (faster repeated runs)", True)
+    cache_dir = ".cache"
+    cache_ttl = 300
+    if cache_enabled:
+        cache_ttl = _ask_int("  Cache TTL in seconds (how long before re-fetching)", 300)
+    _print()
+
     # --- Signal History ---
     use_history = _ask_yes_no("Save signal history to file?", True)
     signal_history: Optional[SignalHistorySettings] = None
@@ -354,6 +362,7 @@ def run_interactive_setup() -> InteractiveResult:
     if risk_config:
         for k, v in risk_config.items():
             _print(f"    {k}: {v}")
+    _print(f"  Data cache:    {'Enabled (TTL ' + str(cache_ttl) + 's)' if cache_enabled else 'Disabled'}")
     _print(f"  Signal history: {'Enabled' if signal_history else 'Disabled'}")
     _print("-" * 60)
     _print()
@@ -413,6 +422,9 @@ def run_interactive_setup() -> InteractiveResult:
         signal_history=signal_history,
         strategies=strategy_settings_list,
         risk=risk_config,
+        cache_enabled=cache_enabled,
+        cache_dir=cache_dir,
+        cache_ttl_seconds=cache_ttl,
     )
     return InteractiveResult(settings=settings, run_once=run_once, backtest=is_backtest)
 
