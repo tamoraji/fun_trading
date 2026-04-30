@@ -89,6 +89,9 @@ class AppSettings:
     signal_history: Optional[SignalHistorySettings] = None
     strategies: List[StrategySettings] = field(default_factory=list)
     risk: Optional[Dict[str, Any]] = None
+    cache_enabled: bool = False
+    cache_dir: str = ".cache"
+    cache_ttl_seconds: int = 300
 
     @property
     def all_strategies(self) -> List[StrategySettings]:

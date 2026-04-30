@@ -40,6 +40,8 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # poll_interval -> 300
             "",      # market session -> Yes
             "",      # enable risk -> No
+            "",      # cache -> Yes (default)
+            "",      # cache TTL -> 300 (default)
             "",      # signal history -> Yes
             "",      # history path -> signal_history.jsonl
             "",      # save config -> No
@@ -67,6 +69,8 @@ class InteractiveSetupTests(unittest.TestCase):
             "60",            # poll_interval
             "n",             # no market session
             "",              # enable risk -> No
+            "",              # cache -> Yes (default)
+            "",              # cache TTL -> 300 (default)
             "y",             # signal history
             "",              # history path default
             "n",             # don't save config
@@ -94,6 +98,8 @@ class InteractiveSetupTests(unittest.TestCase):
             "",          # poll_interval -> 300
             "",          # market session -> Yes
             "",          # enable risk -> No
+            "",          # cache -> Yes (default)
+            "",          # cache TTL -> 300 (default)
             "",          # signal history -> Yes
             "",          # history path
             "",          # save config -> No
@@ -115,6 +121,8 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # poll_interval
             "",      # market session
             "",      # enable risk -> No
+            "",      # cache -> Yes (default)
+            "",      # cache TTL -> 300 (default)
             "",      # signal history
             "",      # history path
             "",      # save config
@@ -133,6 +141,8 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # poll_interval
             "",      # market session
             "",      # enable risk -> No
+            "",      # cache -> Yes (default)
+            "",      # cache TTL -> 300 (default)
             "",      # signal history
             "",      # history path
             "",      # save config
@@ -154,6 +164,8 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # poll_interval
             "",      # market session
             "",      # enable risk -> No
+            "",      # cache -> Yes (default)
+            "",      # cache TTL -> 300 (default)
             "",      # signal history
             "",      # history path
             "",      # save config
@@ -172,6 +184,8 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # poll_interval
             "",      # market session
             "",      # enable risk -> No
+            "",      # cache -> Yes (default)
+            "",      # cache TTL -> 300 (default)
             "",      # signal history
             "",      # history path
             "",      # save config
@@ -190,6 +204,8 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # poll_interval
             "",      # market session
             "",      # enable risk -> No
+            "",      # cache -> Yes (default)
+            "",      # cache TTL -> 300 (default)
             "n",     # NO signal history
             "",      # save config
             "1",     # run once
@@ -213,6 +229,8 @@ class InteractiveSetupTests(unittest.TestCase):
             "10",    # take profit %
             "0",     # min volume (off)
             "3",     # max signals per day
+            "",      # cache -> Yes (default)
+            "",      # cache TTL -> 300 (default)
             "",      # signal history
             "",      # history path
             "",      # save config
@@ -236,6 +254,8 @@ class InteractiveSetupTests(unittest.TestCase):
             "300",       # poll_interval
             "n",         # no market session
             "",          # enable risk -> No
+            "",          # cache -> Yes (default)
+            "",          # cache TTL -> 300 (default)
             "y",         # signal history
             "",          # history path
             "n",         # don't save
@@ -255,6 +275,8 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # poll_interval
             "",      # market session
             "",      # enable risk -> No
+            "",      # cache -> Yes (default)
+            "",      # cache TTL -> 300 (default)
             "",      # signal history
             "",      # history path
             "",      # save config
@@ -270,6 +292,25 @@ class InteractiveSetupTests(unittest.TestCase):
         ]
         with self.assertRaises(SystemExit):
             self._run_with_inputs(inputs)
+
+    def test_cache_disabled(self):
+        inputs = [
+            "",      # symbols
+            "",      # strategy
+            "",      # short_window
+            "",      # long_window
+            "",      # bar_interval
+            "",      # poll_interval
+            "",      # market session
+            "",      # risk -> No
+            "n",     # cache -> No
+            "",      # signal history
+            "",      # history path
+            "",      # save config
+            "1",     # run once
+        ]
+        result = self._run_with_inputs(inputs)
+        self.assertFalse(result.settings.cache_enabled)
 
 
 class ParseStrategyChoicesTests(unittest.TestCase):

@@ -24,7 +24,7 @@ def _run_backtest(settings) -> int:
     from .backtest import run_backtest
     from .metrics import compute_metrics, format_report, format_comparison
 
-    provider = create_market_data_provider(settings.market_data)
+    provider = _create_provider(settings)
     strategies_list = [create_strategy(s) for s in settings.all_strategies]
 
     all_results = []
@@ -70,8 +70,20 @@ def _create_risk_manager(settings):
     return RiskManager(RiskSettings(**settings.risk))
 
 
-def build_engine_from_settings(settings, pretty: bool = False) -> TradingEngine:
+def _create_provider(settings):
     provider = create_market_data_provider(settings.market_data)
+    if settings.cache_enabled:
+        from .cache import CachedDataProvider
+        provider = CachedDataProvider(
+            upstream=provider,
+            cache_dir=settings.cache_dir,
+            ttl_seconds=settings.cache_ttl_seconds,
+        )
+    return provider
+
+
+def build_engine_from_settings(settings, pretty: bool = False) -> TradingEngine:
+    provider = _create_provider(settings)
     strategies = [create_strategy(s) for s in settings.all_strategies]
     notifiers = create_notifiers(settings.notifiers)
     history = create_signal_history(settings.signal_history)

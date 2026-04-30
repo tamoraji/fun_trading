@@ -34,6 +34,11 @@ def load_settings(path: str | Path) -> AppSettings:
     else:
         risk_config = None
 
+    cache_raw = raw.get("cache", {})
+    cache_enabled = bool(cache_raw.get("enabled", False)) if isinstance(cache_raw, dict) else False
+    cache_dir = str(cache_raw.get("dir", ".cache")) if isinstance(cache_raw, dict) else ".cache"
+    cache_ttl = int(cache_raw.get("ttl_seconds", 300)) if isinstance(cache_raw, dict) else 300
+
     return AppSettings(
         symbols=symbols,
         poll_interval_seconds=poll_interval_seconds,
@@ -44,6 +49,9 @@ def load_settings(path: str | Path) -> AppSettings:
         signal_history=signal_history,
         strategies=strategies,
         risk=risk_config,
+        cache_enabled=cache_enabled,
+        cache_dir=cache_dir,
+        cache_ttl_seconds=cache_ttl,
     )
 
 
