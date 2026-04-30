@@ -5,6 +5,21 @@
 - Python 3.9 or higher
 - No external dependencies required (stdlib only)
 
+## Setup
+
+```bash
+# Create virtual environment (first time only)
+python -m venv .venv
+source .venv/bin/activate    # macOS/Linux
+# .venv\Scripts\activate     # Windows
+
+# Install with TUI support
+pip install -e ".[tui,dev]"
+
+# Or install everything (TUI + web + dev)
+pip install -e ".[all,dev]"
+```
+
 ## Quick Start — Interactive Mode (Recommended)
 
 ```bash
@@ -42,7 +57,8 @@ How would you like to run?
   1. Run once (analyze now and exit)
   2. Monitor continuously
   3. Backtest (replay historical data)
-  4. Cancel
+  4. TUI Dashboard (live visual monitoring)
+  5. Cancel
 ```
 
 ## Quick Start — Config File Mode
@@ -79,6 +95,8 @@ Or choose "2. Monitor continuously" in the wizard.
 ### 3. Backtest
 Replay historical data through your strategies and see performance metrics.
 
+In the wizard, choose "3. Backtest" then select history length (1y/2y/5y).
+
 In the wizard, choose "3. Backtest" then select history length (1y/2y/5y). You'll get a report like:
 
 ```
@@ -105,6 +123,33 @@ In the wizard, choose "3. Backtest" then select history length (1y/2y/5y). You'l
 ```
 
 Run multiple strategies to get a comparison table.
+
+### 4. TUI Dashboard
+Live visual monitoring with color-coded panels. Choose "4. TUI Dashboard" in the wizard or use `--tui`:
+
+```bash
+python -m trading_framework --config my-config.json --tui
+```
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  Trading Framework — Live Dashboard                     │
+├────────────────────────────┬────────────────────────────┤
+│  PORTFOLIO                 │  STATUS                    │
+│  Cash: $90,000             │  Cycle: 47                 │
+│  Realized P&L: +$2,340    │  Signals: 1                │
+│  AAPL  long  $189.50      │  Holds: 5                  │
+├────────────────────────────┴────────────────────────────┤
+│  14:30  ★ AAPL/macd  BUY $189.50                       │
+│  14:30  AAPL/rsi  HOLD (within normal range)            │
+├─────────────────────────────────────────────────────────┤
+│  Q: Quit  P: Pause/Resume  S: Summary                  │
+└─────────────────────────────────────────────────────────┘
+```
+
+Keyboard shortcuts: **Q** quit, **P** pause/resume, **S** portfolio summary.
+
+Requires `pip install -e ".[tui]"` (textual).
 
 ## Features
 

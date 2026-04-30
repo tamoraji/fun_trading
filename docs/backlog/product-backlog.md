@@ -242,7 +242,7 @@ Goal: provide multiple UI options for different user groups — terminal power u
 Initial stories:
 
 **TUI (Terminal UI) — for power users and headless servers:**
-- UI-001 Add rich TUI dashboard using curses or textual (live-updating terminal UI)
+- ~~UI-001 Add rich TUI dashboard using Textual~~ DONE
 - UI-002 Add TUI backtest results viewer with scrollable trade log
 - UI-003 Add TUI signal history browser with filtering and search
 

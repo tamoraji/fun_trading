@@ -175,7 +175,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # signal history
             "",      # history path
             "",      # save config
-            "4",     # Cancel
+            "5",     # Cancel
         ]
         with self.assertRaises(SystemExit):
             self._run_with_inputs(inputs)
