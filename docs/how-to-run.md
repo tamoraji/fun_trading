@@ -26,40 +26,42 @@ pip install -e ".[all,dev]"
 python -m trading_framework
 ```
 
-The wizard guides you through everything: symbols, strategy, parameters, and run mode.
+The wizard starts by asking for symbols, then offers three paths:
 
 ```
 ============================================================
-  Trading Framework — Interactive Setup
+  Trading Framework
 ============================================================
 
-Which symbols would you like to monitor?
-  Stocks:  AAPL, MSFT, SPY, TSLA, GOOGL
-  Crypto:  BTC-USD, ETH-USD, SOL-USD
-  Forex:   EURUSD=X, GBPUSD=X
-Enter symbols (comma-separated) [AAPL, MSFT, SPY]:
+What would you like to trade?
+Enter symbol(s) [AAPL]: AAPL, BTC-USD
 
-Which strategy would you like to use?
-  You can pick multiple: e.g. 1,2
+How would you like to set up?
 
-  1. Moving Average Crossover (SMA)
-  2. Relative Strength Index (RSI)
-  3. Breakout (Channel)
-  4. MACD (Moving Average Convergence Divergence)
-  5. Goslin Three-Line Momentum
-  6. Market Profile (Value Area)
+  1. Quick Start
+     Just pick symbols — we configure everything automatically.
 
-Choose strategy number(s) [1]:
+  2. Choose a Preset
+     Pre-built profiles for day trading, swing trading, crypto, etc.
 
-...
-
-How would you like to run?
-  1. Run once (analyze now and exit)
-  2. Monitor continuously
-  3. Backtest (replay historical data)
-  4. TUI Dashboard (live visual monitoring)
-  5. Cancel
+  3. Advanced Setup
+     Full control over every parameter.
 ```
+
+### Quick Start (Option 1)
+Enter your symbols and go. Auto-detects crypto vs stocks and configures strategies, intervals, risk, and paper trading accordingly. Just 3 inputs total.
+
+### Presets (Option 2)
+Choose from pre-built profiles:
+- **Day Trader** — 5m bars, MACD+RSI, tight risk
+- **Swing Trader** — Daily bars, SMA+Breakout, moderate risk
+- **Crypto** — 1h bars, RSI+Breakout+MACD, 24/7
+- **Futures/Goslin** — Daily bars, Goslin momentum, conservative
+- **Value Investor** — Daily bars, Market Profile
+- **Backtest Lab** — Compare ALL strategies on historical data
+
+### Advanced (Option 3)
+Full control: pick strategies (multiple allowed), set every parameter (type `?` for help on any option), configure risk filters, paper trading, and more.
 
 ## Quick Start — Config File Mode
 
