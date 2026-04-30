@@ -41,6 +41,25 @@ STRATEGY_INFO = {
         ],
         "bars_needed": lambda p: p.get("period", 14) + 2,
     },
+    "breakout": {
+        "display_name": "Breakout (Channel)",
+        "short_desc": "Detects price breaking above/below the recent high/low channel with volume confirmation.",
+        "params": [
+            {"name": "lookback", "prompt": "Lookback window (bars for high/low channel)", "default": 20, "type": int},
+            {"name": "volume_factor", "prompt": "Volume factor (0 to disable)", "default": 1.5, "type": float},
+        ],
+        "bars_needed": lambda p: p.get("lookback", 20) + 1,
+    },
+    "macd": {
+        "display_name": "MACD (Moving Average Convergence Divergence)",
+        "short_desc": "Detects trend changes via fast/slow EMA crossover with signal line confirmation.",
+        "params": [
+            {"name": "fast_period", "prompt": "Fast EMA period", "default": 12, "type": int},
+            {"name": "slow_period", "prompt": "Slow EMA period", "default": 26, "type": int},
+            {"name": "signal_period", "prompt": "Signal line EMA period", "default": 9, "type": int},
+        ],
+        "bars_needed": lambda p: p.get("slow_period", 26) + p.get("signal_period", 9),
+    },
 }
 
 BAR_INTERVALS = ["1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo"]
@@ -69,13 +88,17 @@ def _ask(prompt: str, default: str = "") -> str:
     return _input(f"{prompt}: ").strip()
 
 
-def _ask_int(prompt: str, default: int) -> int:
+def _ask_number(prompt: str, default, type_fn=int):
     raw = _ask(prompt, str(default))
     try:
-        return int(raw)
+        return type_fn(raw)
     except ValueError:
         _print(f"  Invalid number, using default: {default}")
         return default
+
+
+def _ask_int(prompt: str, default: int) -> int:
+    return _ask_number(prompt, default, int)
 
 
 def _parse_strategy_choices(raw: str, max_count: int) -> List[int]:
@@ -215,7 +238,8 @@ def run_interactive_setup() -> InteractiveResult:
         else:
             _print("Configure strategy parameters (press Enter for defaults):")
         for param in info["params"]:
-            value = _ask_int(f"  {param['prompt']}", param["default"])
+            type_fn = param.get("type", int)
+            value = _ask_number(f"  {param['prompt']}", param["default"], type_fn)
             strat["params"][param["name"]] = value
         _print()
 

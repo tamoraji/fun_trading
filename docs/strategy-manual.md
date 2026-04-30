@@ -162,20 +162,159 @@ Bar 46:    Price jumps to $158
 
 ---
 
+## 3. Breakout (Channel)
+
+**Config name:** `breakout`
+
+### What it is
+
+A momentum strategy that detects when price breaks out of a recent trading range (channel). The channel is defined by the highest high and lowest low over a lookback window. An optional volume filter ensures breakouts are backed by conviction.
+
+### How it works
+
+1. Look at the previous N bars (the lookback window).
+2. Find the **highest high** and **lowest low** in that window.
+3. Compare the current bar's close to the channel:
+   - Close above the channel high = potential upward breakout
+   - Close below the channel low = potential downward breakout
+4. If volume confirmation is enabled, check that current volume >= `volume_factor * average_volume`.
+
+### Signals
+
+| Signal | Condition | Meaning |
+|--------|-----------|---------|
+| **BUY** | Close > channel high AND volume confirmed | Price broke above resistance with conviction. |
+| **SELL** | Close < channel low AND volume confirmed | Price broke below support with conviction. |
+| **HOLD** | Price within channel, or breakout without sufficient volume | No breakout or not confirmed. |
+
+### Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `lookback` | 20 | Number of previous bars to define the channel. |
+| `volume_factor` | 1.5 | Current volume must be >= this multiple of average volume. Set to 0 to disable volume confirmation. |
+
+### Recommended ranges
+
+- **Tight channel (more signals):** lookback 10, volume_factor 1.0
+- **Standard:** lookback 20, volume_factor 1.5
+- **Wide channel (fewer, stronger signals):** lookback 50, volume_factor 2.0
+- **No volume filter (for low-volume assets):** volume_factor 0
+
+### When to use
+
+- Range-bound markets that eventually break out (consolidation patterns).
+- Stocks approaching key support/resistance levels.
+- Pairs well with volume — breakouts without volume often fail (false breakouts).
+
+### Strengths and limitations
+
+**Strengths:**
+- Catches the start of big moves early
+- Volume confirmation reduces false signals
+- Simple, intuitive logic
+
+**Limitations:**
+- False breakouts are common, especially in choppy markets
+- Doesn't indicate trend direction before the breakout
+- No profit target or stop-loss built in
+
+---
+
+## 4. MACD (Moving Average Convergence Divergence)
+
+**Config name:** `macd`
+
+### What it is
+
+A trend-following momentum indicator that shows the relationship between two Exponential Moving Averages (EMAs). It's one of the most widely used indicators in technical analysis, combining trend detection with momentum measurement.
+
+### How it works
+
+1. **Fast EMA** (default 12-period): Short-term exponential moving average of closing prices.
+2. **Slow EMA** (default 26-period): Long-term exponential moving average of closing prices.
+3. **MACD Line** = Fast EMA - Slow EMA. When positive, short-term momentum is above long-term; when negative, it's below.
+4. **Signal Line** (default 9-period): An EMA of the MACD line itself — smooths the MACD to reduce noise.
+5. **Histogram** = MACD Line - Signal Line. Shows the gap between MACD and its signal.
+
+Unlike SMA, EMA gives more weight to recent prices: `EMA = close * multiplier + previous_EMA * (1 - multiplier)` where `multiplier = 2 / (period + 1)`.
+
+### Signals
+
+| Signal | Condition | Meaning |
+|--------|-----------|---------|
+| **BUY** | MACD line crosses above signal line | Bullish momentum is accelerating — short-term trend is turning up faster than the signal. |
+| **SELL** | MACD line crosses below signal line | Bearish momentum is accelerating — short-term trend is turning down. |
+| **HOLD** | No crossover | Current momentum hasn't changed direction. |
+
+### Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `fast_period` | 12 | Fast EMA period. Smaller = more responsive. |
+| `slow_period` | 26 | Slow EMA period. Larger = smoother trend. |
+| `signal_period` | 9 | Signal line EMA period. Smooths the MACD line. |
+
+### Recommended ranges
+
+- **Standard (Gerald Appel's original):** 12, 26, 9
+- **Faster (shorter-term trading):** 8, 17, 9
+- **Slower (longer-term, fewer signals):** 19, 39, 9
+- **Crypto (volatile markets):** 12, 26, 9 on 4h or daily bars
+
+### When to use
+
+- Trending markets where you want to catch momentum shifts.
+- As confirmation alongside other strategies (e.g., MACD confirms RSI signal).
+- Works well on longer timeframes (1h, 4h, daily) — noisy on very short timeframes.
+
+### Example
+
+With defaults (12, 26, 9) on daily bars:
+
+```
+Days 1-26:  Price trending up from $100 to $130
+Day 27:     Fast EMA = $128, Slow EMA = $120, MACD = +8
+            Signal line = +6
+            MACD above signal -> bullish
+Day 35:     Price reverses, drops to $118
+            Fast EMA = $120, Slow EMA = $122, MACD = -2
+            Signal line = +1
+            MACD crossed below signal
+            -> SELL signal
+```
+
+### Strengths and limitations
+
+**Strengths:**
+- Combines trend and momentum in one indicator
+- Signal line crossovers are clear, objective entry/exit points
+- Histogram shows momentum acceleration/deceleration visually
+- Very widely used — well-understood behavior
+
+**Limitations:**
+- Lagging indicator (based on moving averages, signals come after moves start)
+- Can give false signals in choppy/sideways markets
+- Default parameters may not suit all timeframes or asset classes
+
+---
+
 ## Choosing a Strategy
 
 | If you want to... | Use |
 |---|---|
-| Follow the trend and catch big moves | Moving Average Crossover |
+| Follow the trend and catch big moves | Moving Average Crossover or MACD |
 | Catch reversals and buy dips / sell rallies | RSI |
-| Trade trending markets (stocks in momentum) | Moving Average Crossover with longer windows |
+| Catch breakouts from consolidation | Breakout |
+| Trade trending markets (stocks in momentum) | MACD or Moving Average Crossover with longer windows |
 | Trade ranging markets (consolidating stocks) | RSI with standard thresholds |
-| Get fewer but higher-confidence signals | Either strategy with wider parameters |
-| Get more frequent signals | Either strategy with tighter parameters |
+| Combine trend + momentum | MACD (built-in) or SMA + RSI together |
+| Get fewer but higher-confidence signals | Any strategy with wider parameters |
+| Volume-confirmed entries | Breakout with volume_factor > 0 |
 
-### Combining strategies (future feature)
+### Combining strategies
 
-In a future release, the framework will support running multiple strategies simultaneously and combining their signals through a composite scoring system. For example, a BUY signal from both SMA crossover and RSI would carry more weight than either signal alone.
+The framework supports running multiple strategies simultaneously. Enter `1,2,3,4` at the strategy prompt to run all four. Each strategy evaluates independently, so you'll see signals from each one — useful for confirmation (e.g., both MACD and RSI agree on BUY).
 
 ---
 
@@ -184,13 +323,20 @@ In a future release, the framework will support running multiple strategies simu
 | Term | Definition |
 |------|-----------|
 | **Bar** | A single price candlestick (OHLCV: open, high, low, close, volume) for a time period. |
+| **Breakout** | When price moves above resistance (channel high) or below support (channel low). |
+| **Channel** | The range between the highest high and lowest low over a lookback period. |
 | **Crossover** | When one value (e.g., a fast SMA) moves from below to above another value (e.g., a slow SMA). |
-| **Lookback** | How far back in time the framework fetches historical bars. Default is 5 days. |
+| **EMA** | Exponential Moving Average — a weighted average giving more importance to recent prices. |
+| **Histogram** | The difference between the MACD line and its signal line, showing momentum strength. |
+| **Lookback** | How far back in time the framework fetches historical bars. |
+| **MACD** | Moving Average Convergence Divergence — the difference between fast and slow EMAs. |
 | **Momentum** | The rate of price change — how fast the price is moving up or down. |
 | **Overbought** | A condition where an asset's price has risen quickly and may be due for a pullback. |
 | **Oversold** | A condition where an asset's price has fallen quickly and may be due for a bounce. |
 | **Period** | The number of bars used in a calculation (e.g., 14-period RSI). |
-| **SMA** | Simple Moving Average — the arithmetic mean of the last N closing prices. |
 | **RSI** | Relative Strength Index — a momentum oscillator ranging from 0 to 100. |
+| **Signal line** | An EMA of the MACD line, used to generate buy/sell signals on crossover. |
+| **SMA** | Simple Moving Average — the arithmetic mean of the last N closing prices. |
 | **Signal** | A BUY, SELL, or HOLD recommendation generated by a strategy. |
+| **Volume confirmation** | Requiring above-average volume to validate a price move (reduces false signals). |
 | **Wilder smoothing** | An exponential moving average method created by J. Welles Wilder Jr., giving more weight to recent data. |
