@@ -299,6 +299,83 @@ Day 35:     Price reverses, drops to $118
 
 ---
 
+## 5. Goslin Three-Line Momentum
+
+**Config name:** `goslin_momentum`
+
+### What it is
+
+A three-line momentum system from Chick Goslin's "Intelligent Futures Trading." It combines a long-term trend indicator with a short-term timing oscillator and an intermediate-term confirming filter. Signals only fire when all three lines agree — this makes it selective but high-conviction.
+
+### The Three Lines
+
+**Direction Line** (49-day SMA): The overall trend. Price above the direction line = uptrend, below = downtrend. Think of it as a compass — you only trade in the direction it points.
+
+**Timing Line** (3-day SMA minus 10-day SMA): A short-term momentum oscillator. It swings above and below zero. When it crosses from negative to positive, short-term momentum has turned bullish. When it crosses from positive to negative, momentum has turned bearish. This is your entry trigger.
+
+**Confirming Line** (15-day SMA of the timing line): Smooths out the timing line to show the intermediate-term trend of momentum. Acts as a filter — it must support the trade direction for a signal to fire.
+
+### Signals
+
+| Signal | Condition | Meaning |
+|--------|-----------|---------|
+| **BUY** | Price above direction line + timing line crosses above zero + confirming line is bullish | All three timeframes align bullish — high-conviction long entry. |
+| **SELL** | Price below direction line + timing line crosses below zero + confirming line is bearish | All three timeframes align bearish — high-conviction short entry. |
+| **HOLD** | Any line disagrees | Not enough alignment — wait for all three to agree. |
+
+### Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `direction_period` | 49 | SMA period for the direction/trend line (Goslin's ten-week average). |
+| `timing_short` | 3 | Short SMA period for the timing oscillator. |
+| `timing_long` | 10 | Long SMA period for the timing oscillator. |
+| `confirming_period` | 15 | SMA period for smoothing the timing line into the confirming line. |
+
+### Recommended ranges
+
+- **Goslin's original**: 49, 3, 10, 15 (designed for daily futures charts)
+- **Faster (stocks/crypto)**: 35, 3, 8, 12
+- **Slower (weekly charts)**: 49, 5, 15, 20
+
+### When to use
+
+- Markets with clear trending behavior — the direction line keeps you on the right side
+- When you want **fewer but higher-quality signals** (all three lines must agree)
+- Futures, commodities, forex, and trending stocks — originally designed for futures
+- Best on daily bars (the original system used daily data)
+
+### Example
+
+With defaults (49, 3, 10, 15) on daily bars:
+
+```
+Days 1-49:  AAPL trends upward from $150 to $180
+Day 50:     Direction Line (49-day SMA) = $165
+            Price ($180) is ABOVE direction line → trend is UP
+            Recent dip: price dropped to $172 then bounced to $180
+            Timing Line crosses from -0.5 to +1.2 (turned positive)
+            Confirming Line = +0.8 (bullish)
+            All three lines agree → BUY signal
+```
+
+### Strengths and limitations
+
+**Strengths:**
+- Three-layer confirmation reduces false signals significantly
+- Direction line keeps you trading with the trend
+- Timing line provides precise entry points
+- Confirming line filters out weak setups
+- Based on 25+ years of Goslin's real trading experience
+
+**Limitations:**
+- Very selective — may generate few signals in quiet markets
+- Requires ~65 bars of history before it can generate the first signal
+- Designed for futures/daily data — may need parameter adjustment for intraday
+- All three lines must agree, so you'll miss some valid moves where only two agree
+
+---
+
 ## Choosing a Strategy
 
 | If you want to... | Use |
@@ -309,7 +386,9 @@ Day 35:     Price reverses, drops to $118
 | Trade trending markets (stocks in momentum) | MACD or Moving Average Crossover with longer windows |
 | Trade ranging markets (consolidating stocks) | RSI with standard thresholds |
 | Combine trend + momentum | MACD (built-in) or SMA + RSI together |
-| Get fewer but higher-confidence signals | Any strategy with wider parameters |
+| High-conviction, selective signals | Goslin Momentum (three-line confirmation) |
+| Trade futures or commodities | Goslin Momentum (designed for futures) |
+| Get fewer but higher-confidence signals | Any strategy with wider parameters, or Goslin |
 | Volume-confirmed entries | Breakout with volume_factor > 0 |
 
 ### Combining strategies
@@ -325,7 +404,9 @@ The framework supports running multiple strategies simultaneously. Enter `1,2,3,
 | **Bar** | A single price candlestick (OHLCV: open, high, low, close, volume) for a time period. |
 | **Breakout** | When price moves above resistance (channel high) or below support (channel low). |
 | **Channel** | The range between the highest high and lowest low over a lookback period. |
+| **Confirming Line** | In Goslin's system, an SMA of the timing line values that filters and qualifies trade signals. |
 | **Crossover** | When one value (e.g., a fast SMA) moves from below to above another value (e.g., a slow SMA). |
+| **Direction Line** | In Goslin's system, a long-term SMA (49-day) that determines the overall market trend. |
 | **EMA** | Exponential Moving Average — a weighted average giving more importance to recent prices. |
 | **Histogram** | The difference between the MACD line and its signal line, showing momentum strength. |
 | **Lookback** | How far back in time the framework fetches historical bars. |
@@ -336,6 +417,8 @@ The framework supports running multiple strategies simultaneously. Enter `1,2,3,
 | **Period** | The number of bars used in a calculation (e.g., 14-period RSI). |
 | **RSI** | Relative Strength Index — a momentum oscillator ranging from 0 to 100. |
 | **Signal line** | An EMA of the MACD line, used to generate buy/sell signals on crossover. |
+| **Timing Line** | In Goslin's system, a short-term momentum oscillator (difference of two SMAs) used for trade entry timing. |
+| **Three-Point System** | Goslin's method requiring all three lines (direction, timing, confirming) to agree before trading. |
 | **SMA** | Simple Moving Average — the arithmetic mean of the last N closing prices. |
 | **Signal** | A BUY, SELL, or HOLD recommendation generated by a strategy. |
 | **Volume confirmation** | Requiring above-average volume to validate a price move (reduces false signals). |
