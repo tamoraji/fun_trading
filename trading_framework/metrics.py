@@ -125,17 +125,22 @@ def format_trades(trades: List[Trade]) -> str:
     """Format a trade log showing each round-trip trade."""
     if not trades:
         return "  No trades."
+
+    # Dynamic column width based on largest price
+    max_price = max(max(t.entry_price, t.exit_price) for t in trades)
+    pw = max(9, len(f"{max_price:,.2f}") + 1)
+
     lines = [
-        f"  {'#':<4} {'Entry':>10} {'Action':<5} {'Entry $':>9} {'Exit $':>9} {'P&L':>8} {'Days':>5}",
-        "  " + "-" * 56,
+        f"  {'#':<4} {'Date':<12} {'Side':<6} {'Entry':>{pw}} {'Exit':>{pw}} {'P&L':>9} {'Days':>5}",
+        "  " + "-" * (4 + 12 + 6 + pw + pw + 9 + 5 + 5),
     ]
     for i, t in enumerate(trades, 1):
         sign = "+" if t.profit_pct >= 0 else ""
         days = (t.exit_timestamp - t.entry_timestamp).days
         lines.append(
-            f"  {i:<4} {t.entry_timestamp.strftime('%Y-%m-%d'):>10} "
-            f"{t.entry_action:<5} {t.entry_price:>9.2f} {t.exit_price:>9.2f} "
-            f"{sign}{t.profit_pct:>6.2f}% {days:>5}"
+            f"  {i:<4} {t.entry_timestamp.strftime('%Y-%m-%d'):<12} "
+            f"{t.entry_action:<6} {t.entry_price:>{pw},.2f} {t.exit_price:>{pw},.2f} "
+            f"{sign}{t.profit_pct:>7.2f}% {days:>5}"
         )
     return "\n".join(lines)
 

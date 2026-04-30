@@ -48,6 +48,7 @@ class TradingDashboard(App):
         self.settings = settings
         self.paused = False
         self.cycle_count = 0
+        self._exit = False
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -62,10 +63,10 @@ class TradingDashboard(App):
         self.sub_title = "Live Dashboard"
         self._run_engine()
 
-    @work(thread=True)
+    @work(thread=True, exit_on_error=False)
     def _run_engine(self) -> None:
         """Run engine cycles in a background thread."""
-        while True:
+        while not self._exit:
             if not self.paused:
                 self.cycle_count += 1
 
@@ -81,11 +82,18 @@ class TradingDashboard(App):
                 finally:
                     self.engine.logger = original_logger
 
-                self.call_from_thread(
-                    self._update_ui, log_messages, signals
-                )
+                try:
+                    self.call_from_thread(
+                        self._update_ui, log_messages, signals
+                    )
+                except Exception:
+                    break  # App is shutting down
 
-            time.sleep(self.settings.poll_interval_seconds)
+            # Sleep in small increments so we can exit quickly
+            for _ in range(self.settings.poll_interval_seconds):
+                if self._exit:
+                    return
+                time.sleep(1)
 
     def _update_ui(self, log_messages: list[str], signals: list) -> None:
         """Update all dashboard panels (called on the UI thread)."""
@@ -183,18 +191,28 @@ class TradingDashboard(App):
             log_widget.write(self.engine.portfolio.summary())
 
 
+    def action_quit(self) -> None:
+        self._exit = True
+        super().exit()
+
+    def on_unmount(self) -> None:
+        self._exit = True
+
+
 def run_tui(settings) -> None:
     """Launch the TUI dashboard with the given settings."""
     from .cli import build_engine_from_settings
 
     engine = build_engine_from_settings(settings, pretty=False)
-    # Replace the logger with a no-op; the TUI captures logs itself.
     engine.logger = lambda msg: None
 
     app = TradingDashboard(engine, settings)
-    app.run()
+    try:
+        app.run()
+    except KeyboardInterrupt:
+        app._exit = True
 
     # Save portfolio on exit
     if engine.portfolio:
         engine.portfolio.save(settings.paper_portfolio_path)
-        print(f"Portfolio saved to {settings.paper_portfolio_path}")
+        print(f"\nPortfolio saved to {settings.paper_portfolio_path}")
