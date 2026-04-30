@@ -234,19 +234,34 @@ Initial stories:
 
 ### EPIC-12 User Interface and Dashboard
 
-Goal: provide visual tools for monitoring, analysis, and control beyond the CLI.
+Goal: provide multiple UI options for different user groups — terminal power users, desktop users, and web/mobile users. The core logic must stay UI-agnostic so any frontend can consume it.
+
+**Design principle:** All UI layers consume the same service/API layer. No business logic in UI code.
 
 Initial stories:
 
-- UI-001 Add web-based dashboard (Flask/FastAPI + simple frontend)
-- UI-002 Add real-time P&L and open positions display
-- UI-003 Add interactive price charts with indicator overlays
-- UI-004 Add strategy performance comparison views
-- UI-005 Add signal history browser with filtering
-- UI-006 Add configuration editor in dashboard
-- UI-007 Add trade approval/rejection UI for human-in-the-loop workflow
-- UI-008 Add portfolio allocation and exposure visualization
-- UI-009 Add mobile-responsive design
+**TUI (Terminal UI) — for power users and headless servers:**
+- UI-001 Add rich TUI dashboard using curses or textual (live-updating terminal UI)
+- UI-002 Add TUI backtest results viewer with scrollable trade log
+- UI-003 Add TUI signal history browser with filtering and search
+
+**Web Dashboard — for browser-based monitoring and team access:**
+- UI-004 Add web-based dashboard (Flask/FastAPI + simple frontend)
+- UI-005 Add real-time P&L and open positions display
+- UI-006 Add interactive price charts with indicator overlays
+- UI-007 Add strategy performance comparison views
+- UI-008 Add signal history browser with filtering
+- UI-009 Add configuration editor in dashboard
+- UI-010 Add trade approval/rejection UI for human-in-the-loop workflow
+
+**GUI (Desktop) — for traders who prefer native apps:**
+- UI-011 Add desktop GUI using Tkinter or PyQt (cross-platform)
+- UI-012 Add portfolio allocation and exposure visualization
+- UI-013 Add system tray integration with signal notifications
+
+**Shared / API layer:**
+- UI-014 Extract service layer API that all UIs consume (decouple UI from engine)
+- UI-015 Add mobile-responsive design for web dashboard
 - UI-010 Add API endpoints for external tool integration
 
 ### EPIC-13 Infrastructure and Deployment
