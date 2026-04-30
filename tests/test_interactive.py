@@ -39,6 +39,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # bar_interval -> 5m
             "",      # poll_interval -> 300
             "",      # market session -> Yes
+            "",      # enable risk -> No
             "",      # signal history -> Yes
             "",      # history path -> signal_history.jsonl
             "",      # save config -> No
@@ -65,6 +66,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "15m",           # bar_interval
             "60",            # poll_interval
             "n",             # no market session
+            "",              # enable risk -> No
             "y",             # signal history
             "",              # history path default
             "n",             # don't save config
@@ -91,6 +93,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "",          # bar_interval -> 5m
             "",          # poll_interval -> 300
             "",          # market session -> Yes
+            "",          # enable risk -> No
             "",          # signal history -> Yes
             "",          # history path
             "",          # save config -> No
@@ -111,6 +114,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # bar_interval
             "",      # poll_interval
             "",      # market session
+            "",      # enable risk -> No
             "",      # signal history
             "",      # history path
             "",      # save config
@@ -128,6 +132,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # bar_interval
             "",      # poll_interval
             "",      # market session
+            "",      # enable risk -> No
             "",      # signal history
             "",      # history path
             "",      # save config
@@ -148,6 +153,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # bar_interval
             "",      # poll_interval
             "",      # market session
+            "",      # enable risk -> No
             "",      # signal history
             "",      # history path
             "",      # save config
@@ -165,6 +171,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # bar_interval
             "",      # poll_interval
             "",      # market session
+            "",      # enable risk -> No
             "",      # signal history
             "",      # history path
             "",      # save config
@@ -182,12 +189,42 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # bar_interval
             "",      # poll_interval
             "",      # market session
+            "",      # enable risk -> No
             "n",     # NO signal history
             "",      # save config
             "1",     # run once
         ]
         result = self._run_with_inputs(inputs)
         self.assertIsNone(result.settings.signal_history)
+
+    def test_risk_management_enabled(self):
+        inputs = [
+            "",      # symbols
+            "",      # strategy
+            "",      # short_window
+            "",      # long_window
+            "",      # bar_interval
+            "",      # poll_interval
+            "",      # market session
+            "y",     # enable risk
+            "300",   # cooldown
+            "y",     # position aware
+            "5",     # stop loss %
+            "10",    # take profit %
+            "0",     # min volume (off)
+            "3",     # max signals per day
+            "",      # signal history
+            "",      # history path
+            "",      # save config
+            "1",     # run once
+        ]
+        result = self._run_with_inputs(inputs)
+        self.assertIsNotNone(result.settings.risk)
+        self.assertEqual(300, result.settings.risk["cooldown_seconds"])
+        self.assertTrue(result.settings.risk["position_aware"])
+        self.assertEqual(5.0, result.settings.risk["stop_loss_pct"])
+        self.assertEqual(10.0, result.settings.risk["take_profit_pct"])
+        self.assertEqual(3, result.settings.risk["max_signals_per_day"])
 
     def test_large_sma_with_daily_bars_gets_adequate_lookback(self):
         inputs = [
@@ -198,6 +235,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "1d",        # bar_interval
             "300",       # poll_interval
             "n",         # no market session
+            "",          # enable risk -> No
             "y",         # signal history
             "",          # history path
             "n",         # don't save
@@ -216,6 +254,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # bar_interval
             "",      # poll_interval
             "",      # market session
+            "",      # enable risk -> No
             "",      # signal history
             "",      # history path
             "",      # save config
