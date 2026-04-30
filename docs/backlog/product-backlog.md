@@ -247,7 +247,7 @@ Initial stories:
 - UI-003 Add TUI signal history browser with filtering and search
 
 **Web Dashboard — for browser-based monitoring and team access:**
-- UI-004 Add web-based dashboard (Flask/FastAPI + simple frontend)
+- ~~UI-004 Add web-based dashboard (FastAPI + Jinja2 + Plotly)~~ DONE
 - UI-005 Add real-time P&L and open positions display
 - UI-006 Add interactive price charts with indicator overlays
 - UI-007 Add strategy performance comparison views

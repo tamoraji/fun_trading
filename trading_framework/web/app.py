@@ -74,8 +74,7 @@ async def dashboard(request: Request):
             ],
         }
 
-    return templates.TemplateResponse("dashboard.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "dashboard.html", {
         "page": "dashboard",
         "portfolio": portfolio_data,
         "signals": signals,
@@ -85,8 +84,7 @@ async def dashboard(request: Request):
 @app.get("/backtest", response_class=HTMLResponse)
 async def backtest_page(request: Request):
     from ..interactive import STRATEGY_INFO, PRESETS
-    return templates.TemplateResponse("backtest.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "backtest.html", {
         "page": "backtest",
         "strategies": {k: v["display_name"] for k, v in STRATEGY_INFO.items()},
         "results": None,
@@ -158,8 +156,7 @@ async def run_backtest_route(
         result = None
         error = str(e)
 
-    return templates.TemplateResponse("backtest.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "backtest.html", {
         "page": "backtest",
         "strategies": {k: v["display_name"] for k, v in STRATEGY_INFO.items()},
         "results": result,
@@ -173,8 +170,7 @@ async def run_backtest_route(
 @app.get("/strategies", response_class=HTMLResponse)
 async def strategies_page(request: Request):
     from ..interactive import STRATEGY_INFO
-    return templates.TemplateResponse("strategies.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "strategies.html", {
         "page": "strategies",
         "strategies": STRATEGY_INFO,
     })
@@ -183,8 +179,7 @@ async def strategies_page(request: Request):
 @app.get("/signals", response_class=HTMLResponse)
 async def signals_page(request: Request):
     signals = _load_signals(100)
-    return templates.TemplateResponse("signals.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "signals.html", {
         "page": "signals",
         "signals": signals,
     })
