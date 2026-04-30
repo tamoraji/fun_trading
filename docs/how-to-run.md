@@ -5,184 +5,251 @@
 - Python 3.9 or higher
 - No external dependencies required (stdlib only)
 
-Verify your Python version:
+## Quick Start — Interactive Mode (Recommended)
 
 ```bash
-python3 --version
+python -m trading_framework
 ```
 
-## Quick Start
+The wizard guides you through everything: symbols, strategy, parameters, and run mode.
 
-### 1. Run with the default config (SMA Crossover strategy)
+```
+============================================================
+  Trading Framework — Interactive Setup
+============================================================
+
+Which symbols would you like to monitor?
+  Stocks:  AAPL, MSFT, SPY, TSLA, GOOGL
+  Crypto:  BTC-USD, ETH-USD, SOL-USD
+  Forex:   EURUSD=X, GBPUSD=X
+Enter symbols (comma-separated) [AAPL, MSFT, SPY]:
+
+Which strategy would you like to use?
+  You can pick multiple: e.g. 1,2
+
+  1. Moving Average Crossover (SMA)
+  2. Relative Strength Index (RSI)
+  3. Breakout (Channel)
+  4. MACD (Moving Average Convergence Divergence)
+  5. Goslin Three-Line Momentum
+  6. Market Profile (Value Area)
+
+Choose strategy number(s) [1]:
+
+...
+
+How would you like to run?
+  1. Run once (analyze now and exit)
+  2. Monitor continuously
+  3. Backtest (replay historical data)
+  4. Cancel
+```
+
+## Quick Start — Config File Mode
 
 ```bash
-cd /Users/moji/fun_trading
+# SMA Crossover strategy
 python -m trading_framework --config config.example.json --once
-```
 
-`--once` runs a single polling cycle and exits. Without it, the framework polls continuously.
-
-### 2. Run with the RSI strategy
-
-```bash
+# RSI strategy
 python -m trading_framework --config config.rsi-example.json --once
-```
 
-### 3. Run continuously (live monitoring)
-
-```bash
+# Continuous monitoring
 python -m trading_framework --config config.example.json
 ```
 
-This polls every 300 seconds (5 minutes) by default. Press `Ctrl+C` to stop.
+`--once` runs a single cycle and exits. Without it, the framework polls continuously. Press `Ctrl+C` to stop.
 
-**Note:** The market session filter is enabled by default (US market hours, Mon-Fri 9:30-16:00 ET). Outside those hours, cycles are skipped. To test anytime, set `"enabled": false` in the `market_session` config section.
+## Run Modes
 
-## Understanding the Output
+### 1. Run Once
+Analyze current market data and exit.
+```bash
+python -m trading_framework --config my-config.json --once
+```
+Or choose "1. Run once" in the interactive wizard.
 
-The framework now outputs structured JSON logs. Each line is a JSON object:
+### 2. Monitor Continuously
+Poll at regular intervals (default 300s).
+```bash
+python -m trading_framework --config my-config.json
+```
+Or choose "2. Monitor continuously" in the wizard.
 
-```json
-{"timestamp": "2026-04-29T14:30:00+00:00", "event": "cycle_start", "symbols": ["AAPL", "MSFT", "SPY"], "symbol_count": 3}
-{"timestamp": "2026-04-29T14:30:01+00:00", "event": "log", "message": "[hold] AAPL: No crossover on the latest bar."}
-{"timestamp": "2026-04-29T14:30:01+00:00", "event": "log", "message": "[signal] MSFT: BUY at 425.30"}
-{"timestamp": "2026-04-29T14:30:02+00:00", "event": "cycle_end", "signals_emitted": 1, "holds": 2, "errors": 0, "elapsed_seconds": 1.234}
+### 3. Backtest
+Replay historical data through your strategies and see performance metrics.
+
+In the wizard, choose "3. Backtest" then select history length (1y/2y/5y). You'll get a report like:
+
+```
+============================================================
+  Backtest: AAPL — SMA Crossover
+============================================================
+  Period:           2025-04-30 to 2026-04-30 (252 bars)
+  Signals:          18
+  Trades:           9 round-trips
+------------------------------------------------------------
+  Total return:     +12.34%
+  Buy & hold:       +18.56%
+  Win rate:         66.7% (6/9)
+  Profit factor:    2.01
+  Max drawdown:     -8.45%
+  Sharpe ratio:     1.23
+------------------------------------------------------------
+  Trade Log:
+  #    Entry      Action  Entry $    Exit $      P&L  Days
+  --------------------------------------------------------
+  1    2025-08-15 BUY      185.30    192.10  +3.67%    12
+  ...
+============================================================
 ```
 
-Key events:
-- `cycle_start` — beginning of a polling cycle with symbol list
-- `log` — individual symbol evaluations (hold, signal, dup, error)
-- `cycle_end` — summary with counts and timing
-- `skip` — market session is closed
+Run multiple strategies to get a comparison table.
 
-## Signal History
+## Features
 
-When `signal_history` is enabled in config, every BUY/SELL signal is appended to a `.jsonl` file:
+### Strategies
+
+6 strategies available. Pick one or combine multiple (e.g. `1,2,3`):
+
+| # | Strategy | Best for |
+|---|----------|----------|
+| 1 | SMA Crossover | Trend following |
+| 2 | RSI | Mean reversion, overbought/oversold |
+| 3 | Breakout | Consolidation breakouts with volume |
+| 4 | MACD | Trend + momentum |
+| 5 | Goslin Momentum | High-conviction futures/daily trading |
+| 6 | Market Profile | Fair value / mean reversion with volume |
+
+See `docs/strategy-manual.md` for detailed explanations.
+
+### Risk Management
+
+Enable in wizard or config to protect against naive signals:
+
+```json
+"risk": {
+    "cooldown_seconds": 300,
+    "position_aware": true,
+    "stop_loss_pct": 5.0,
+    "take_profit_pct": 10.0,
+    "min_volume": 100000,
+    "max_signals_per_day": 3
+}
+```
+
+| Filter | What it does |
+|--------|-------------|
+| Cooldown | Block repeat signals within N seconds |
+| Position tracking | Block BUY if already long, SELL if already short |
+| Stop-loss / Take-profit | Annotate signals with SL/TP price levels |
+| Volume guard | Block signals on low-volume bars |
+| Daily limit | Cap signals per symbol per day |
+
+### Paper Trading
+
+Simulate execution without real money. Tracks positions, cash, and P&L:
+
+```json
+"paper_trading": {
+    "enabled": true,
+    "starting_cash": 100000,
+    "position_size_pct": 10,
+    "portfolio_path": "paper_portfolio.json"
+}
+```
+
+Portfolio state is saved between sessions — positions carry over.
+
+### Data Caching
+
+Cache market data locally to avoid redundant API calls:
+
+```json
+"cache": {
+    "enabled": true,
+    "dir": ".cache",
+    "ttl_seconds": 300
+}
+```
+
+Makes backtests instant on second run. Enabled by default in the wizard.
+
+### Signal History
+
+Every BUY/SELL signal is saved to a `.jsonl` file:
 
 ```bash
-# View saved signals
 cat signal_history.jsonl
 ```
 
-Each line is a JSON record:
+## Configuration Reference
+
+All config options:
 
 ```json
-{"symbol": "AAPL", "action": "BUY", "price": 189.50, "timestamp": "2026-04-29T14:35:00+00:00", "reason": "Short moving average crossed above long moving average.", "strategy_name": "moving_average_crossover", "details": {"short_sma": 188.2, "long_sma": 187.5, ...}}
-```
-
-To pretty-print:
-
-```bash
-python3 -c "
-import json
-with open('signal_history.jsonl') as f:
-    for line in f:
-        record = json.loads(line)
-        print(f\"{record['timestamp']}  {record['action']:4s}  {record['symbol']:6s}  \${record['price']:.2f}  ({record['strategy_name']}: {record['reason']})\")
-"
-```
-
-## Configuration
-
-### Switching strategies
-
-Edit the `"strategy"` section in your config file:
-
-**SMA Crossover:**
-```json
-"strategy": {
+{
+  "symbols": ["AAPL", "MSFT"],
+  "poll_interval_seconds": 300,
+  "market_data": {
+    "provider": "yahoo",
+    "bar_interval": "5m",
+    "lookback": "5d",
+    "timeout_seconds": 10
+  },
+  "strategy": {
     "name": "moving_average_crossover",
-    "params": {
-        "short_window": 5,
-        "long_window": 20
-    }
-}
-```
-
-**RSI:**
-```json
-"strategy": {
-    "name": "rsi",
-    "params": {
-        "period": 14,
-        "oversold": 30,
-        "overbought": 70
-    }
-}
-```
-
-### Changing symbols
-
-```json
-"symbols": ["AAPL", "MSFT", "SPY", "TSLA", "GOOGL"]
-```
-
-### Adjusting poll interval
-
-```json
-"poll_interval_seconds": 60
-```
-
-### Disabling market session filter (for testing anytime)
-
-```json
-"market_session": {
-    "enabled": false
-}
-```
-
-### Disabling signal history
-
-```json
-"signal_history": {
-    "enabled": false
+    "params": {"short_window": 5, "long_window": 20}
+  },
+  "strategies": [
+    {"name": "rsi", "params": {"period": 14}},
+    {"name": "macd", "params": {}}
+  ],
+  "market_session": {
+    "enabled": true,
+    "timezone": "America/New_York",
+    "weekdays": [0, 1, 2, 3, 4],
+    "start": "09:30",
+    "end": "16:00"
+  },
+  "signal_history": {"enabled": true, "path": "signal_history.jsonl"},
+  "risk": {"cooldown_seconds": 300, "position_aware": true, "stop_loss_pct": 5.0},
+  "paper_trading": {"enabled": true, "starting_cash": 100000},
+  "cache": {"enabled": true, "ttl_seconds": 300}
 }
 ```
 
 ## Running Tests
 
-Run the full test suite:
-
 ```bash
-cd /Users/moji/fun_trading
+# Full suite
 python -m pytest tests/ -v
-```
 
-Run tests for a specific module:
-
-```bash
-# Signal history tests
-python -m pytest tests/test_history.py -v
-
-# RSI strategy tests
-python -m pytest tests/test_rsi_strategy.py -v
-
-# Structured logging tests
-python -m pytest tests/test_structlog.py -v
-
-# Engine tests
-python -m pytest tests/test_engine.py -v
-
-# SMA strategy tests
-python -m pytest tests/test_strategy.py -v
-```
-
-## Creating a Custom Config
-
-Copy the example and modify:
-
-```bash
-cp config.example.json my-config.json
-# Edit my-config.json with your preferred settings
-python -m trading_framework --config my-config.json --once
+# By module
+python -m pytest tests/test_strategy.py -v          # SMA
+python -m pytest tests/test_rsi_strategy.py -v       # RSI
+python -m pytest tests/test_breakout_strategy.py -v  # Breakout
+python -m pytest tests/test_macd_strategy.py -v      # MACD
+python -m pytest tests/test_goslin_strategy.py -v    # Goslin
+python -m pytest tests/test_market_profile_strategy.py -v  # Market Profile
+python -m pytest tests/test_backtest.py -v           # Backtesting
+python -m pytest tests/test_metrics.py -v            # Metrics
+python -m pytest tests/test_risk.py -v               # Risk management
+python -m pytest tests/test_paper.py -v              # Paper trading
+python -m pytest tests/test_cache.py -v              # Data cache
+python -m pytest tests/test_engine.py -v             # Engine
+python -m pytest tests/test_history.py -v            # Signal history
+python -m pytest tests/test_interactive.py -v        # Interactive wizard
 ```
 
 ## Troubleshooting
 
 **"No usable price bars returned"** — Yahoo Finance may be down or the symbol is invalid. Check your internet connection and verify the symbol exists on Yahoo Finance.
 
-**"market session is closed"** — You're running outside US market hours. Set `"enabled": false` in `market_session` to test anytime.
+**"market session is closed"** — You're running outside US market hours. Set `"enabled": false` in `market_session` or answer "n" to the market hours question in the wizard.
 
-**No signals emitted** — The strategy may not detect a crossover/threshold breach on the current data. This is normal. Try running for several cycles or use a different strategy/parameters.
+**"Not enough history"** — The strategy needs more bars than available. Use a longer lookback (the wizard auto-calculates this), or use shorter strategy parameters.
 
-**Signal history file not created** — Signals are only written when a BUY or SELL is emitted. HOLD signals are not persisted. Run during market hours with volatile symbols for best results.
+**No signals emitted** — Normal. Most strategies don't signal on every bar. Try backtesting to see signal frequency over time.
+
+**Signal history file not created** — Signals are only written on BUY/SELL. HOLD signals are not persisted.

@@ -12,10 +12,10 @@ Goal: build a rich, extensible library of trading strategies covering technical 
 
 Initial stories:
 
-- STRAT-001 Add RSI strategy with configurable overbought/oversold thresholds, period, and tests
-- STRAT-002 Add breakout strategy with configurable lookback windows and volume confirmation
-- STRAT-003 Add strategy registry so multiple strategies can run concurrently from config
-- STRAT-004 Add MACD strategy (signal line crossover, histogram divergence)
+- ~~STRAT-001 Add RSI strategy~~ DONE
+- ~~STRAT-002 Add breakout strategy~~ DONE
+- ~~STRAT-003 Add strategy registry (multi-strategy from config)~~ DONE
+- ~~STRAT-004 Add MACD strategy~~ DONE
 - STRAT-005 Add Bollinger Bands strategy (squeeze breakout, mean reversion bounce)
 - STRAT-006 Add Stochastic Oscillator strategy with configurable K/D periods
 - STRAT-007 Add ADX/DMI trend strength filter strategy
@@ -31,7 +31,8 @@ Initial stories:
 - STRAT-017 Add pairs trading / cointegration strategy for correlated instruments
 - STRAT-018 Add Parabolic SAR trailing strategy
 - STRAT-019 Add volume profile and OBV-based strategies
-- STRAT-020 Add Goslin momentum method strategies (Direction Lines, Timing Lines, Confirming Lines, Three-Point System)
+- ~~STRAT-020 Add Goslin momentum method strategies~~ DONE
+- STRAT-021 Add Market Profile (Value Area) strategy — DONE
 
 ### EPIC-02 Backtesting and Simulation
 
@@ -39,9 +40,9 @@ Goal: validate strategies on historical data before live deployment with realist
 
 Initial stories:
 
-- SIM-001 Add historical replay mode using stored bars (event-driven simulation)
-- SIM-002 Add backtest result summary metrics (total return, Sharpe, Sortino, max drawdown, win rate, profit factor)
-- SIM-003 Add comparison output between strategies on the same symbol set
+- ~~SIM-001 Add historical replay mode~~ DONE
+- ~~SIM-002 Add backtest result summary metrics~~ DONE
+- ~~SIM-003 Add comparison output between strategies~~ DONE
 - SIM-004 Add slippage modeling (fixed, percentage, volume-based)
 - SIM-005 Add commission and fee modeling (per-trade, per-share, percentage, tiered)
 - SIM-006 Add walk-forward optimization with in-sample/out-of-sample splits
@@ -60,7 +61,7 @@ Goal: make signals durable, multi-channel, and useful for review and improvement
 
 Initial stories:
 
-- SIG-001 Persist emitted signals to local history (SQLite or JSON-lines)
+- ~~SIG-001 Persist emitted signals to local history~~ DONE
 - SIG-002 Add Telegram notifier with bot integration
 - SIG-003 Add daily summary report of emitted signals
 - SIG-004 Add Slack notifier
@@ -80,11 +81,11 @@ Goal: protect capital with pre-trade, active-trade, and portfolio-level risk con
 
 Initial stories:
 
-- RISK-001 Add cooldown support to suppress repeated signals within configurable window
-- RISK-002 Add position-aware logic so signals consider current stance (long/short/flat)
-- RISK-003 Add configurable risk filters (volume guard, volatility guard, spread guard)
-- RISK-004 Add fixed and trailing stop-loss support (price, percentage, ATR-multiple)
-- RISK-005 Add take-profit targets (single and multiple scaled targets)
+- ~~RISK-001 Add cooldown support~~ DONE
+- ~~RISK-002 Add position-aware logic~~ DONE
+- ~~RISK-003 Add configurable risk filters (volume guard)~~ DONE
+- ~~RISK-004 Add stop-loss and take-profit~~ DONE
+- RISK-005 Add take-profit targets (multiple scaled targets)
 - RISK-006 Add break-even stop (move stop to entry after reaching threshold)
 - RISK-007 Add time-based stop (exit after N bars if no movement)
 - RISK-008 Add maximum position size limits (per-asset and total portfolio)
@@ -107,8 +108,8 @@ Goal: connect to brokers for paper trading and live execution with smart order m
 
 Initial stories:
 
-- EXEC-001 Add paper-trading execution adapter with simulated fills
-- EXEC-002 Record order intents and execution outcomes with audit trail
+- ~~EXEC-001 Add paper-trading execution adapter~~ DONE
+- ~~EXEC-002 Record order intents and execution outcomes~~ DONE
 - EXEC-003 Add broker interface abstraction (pluggable broker adapters)
 - EXEC-004 Add Alpaca broker adapter (paper + live trading)
 - EXEC-005 Add Interactive Brokers adapter via IB Gateway API
@@ -129,7 +130,7 @@ Goal: full visibility into runtime behavior, strategy performance, and system he
 
 Initial stories:
 
-- OBS-001 Add structured logs for each polling cycle (start, end, symbol count, results)
+- ~~OBS-001 Add structured logs for each polling cycle~~ DONE
 - OBS-002 Add basic health and error counters
 - OBS-003 Add strategy performance review report (per-strategy P&L, hit rate, expectancy)
 - OBS-004 Add performance attribution (which strategies/signals drove returns)
@@ -183,7 +184,7 @@ Initial stories:
 - DATA-001 Add Alpha Vantage data provider
 - DATA-002 Add Polygon.io data provider for real-time and historical data
 - DATA-003 Add CSV/file-based data import for custom datasets
-- DATA-004 Add local data caching layer (avoid redundant API calls, support offline replay)
+- ~~DATA-004 Add local data caching layer~~ DONE
 - DATA-005 Add data resampling (convert 1m bars to 5m, 15m, 1h, daily)
 - DATA-006 Add multiple timeframe alignment and synchronization
 - DATA-007 Add corporate action adjustments (splits, dividends)

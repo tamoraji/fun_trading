@@ -376,18 +376,102 @@ Day 50:     Direction Line (49-day SMA) = $165
 
 ---
 
+## 6. Market Profile (Value Area)
+
+**Config name:** `market_profile`
+
+### What it is
+
+A strategy based on James Dalton's *Markets in Profile*. It computes a **Value Area** from the volume-weighted price distribution of recent bars. The value area represents where most trading activity occurred — the market's consensus of "fair value." Signals fire when price leaves the value area and then returns.
+
+### Core Concepts
+
+**Point of Control (POC)**: The price with the highest trading volume in the lookback window — the single most-accepted "fair" price.
+
+**VWAP (Volume-Weighted Average Price)**: The average price weighted by volume — gives more importance to prices where more shares were traded.
+
+**Value Area High (VAH) / Value Area Low (VAL)**: The upper and lower bounds of the price range containing 70% of total volume. This is approximately one standard deviation around the POC.
+
+### How it works
+
+1. Take the last N bars (lookback window, default 20)
+2. Sort bars by volume, highest first
+3. Accumulate bars until 70% of total volume is covered
+4. The highest close in those bars = VAH, lowest close = VAL
+5. Compare current price to this value area
+
+### Signals
+
+| Signal | Condition | Meaning |
+|--------|-----------|---------|
+| **BUY** | Previous close was below VAL AND current close crosses back above VAL | Price was below fair value and is returning — buying the dip into value. |
+| **SELL** | Previous close was above VAH AND current close crosses back below VAH | Price was above fair value and is returning — selling the rally back to value. |
+| **HOLD** | Price is within value area, or no crossover | Price is at fair value — no edge. |
+
+### Parameters
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `lookback` | 20 | Number of bars to compute the value area. |
+| `value_area_pct` | 70.0 | Percentage of volume to include in value area (standard is 70%). |
+
+### Recommended ranges
+
+| Your Style | Bar Interval | Lookback | Notes |
+|---|---|---|---|
+| Day trading | 30m or 1h | 13-20 | Intraday value area |
+| Short-term (3-5 days) | 1h | 20-30 | Multi-day value area |
+| Intermediate (weeks) | Daily | 20 (default) | ~1 month of value |
+| Long-term | Weekly | 20 | ~5 months of value |
+
+### When to use
+
+- **Ranging/bracketing markets** where price oscillates around fair value — this is a mean-reversion strategy
+- When you want to buy dips and sell rallies within a trading range
+- Pairs well with trend filters — use Market Profile for entries, direction line for overall trend
+- Works on any liquid asset with meaningful volume data
+
+### Example
+
+With `lookback=20, value_area_pct=70` on daily bars:
+
+```
+Days 1-20:  AAPL trades between $175-$185, most volume at $178-$182
+            Value Area: VAL=$178, VAH=$182, POC=$180
+Day 21:     Price drops to $175 (below VAL)
+Day 22:     Price recovers to $179 (crosses back above VAL)
+            -> BUY signal at $179.00 (returning to value from below)
+```
+
+### Strengths and limitations
+
+**Strengths:**
+- Based on actual market structure (volume), not just price
+- Identifies objective "fair value" — not arbitrary levels
+- Mean-reversion approach captures frequent small moves
+- Volume-based value area adapts to changing market conditions
+
+**Limitations:**
+- Mean-reversion doesn't work in strong trending markets (price stays above/below value)
+- Requires meaningful volume data — less effective on low-volume assets
+- The 70% value area is a convention, not a law — may need adjustment
+- Not predictive — it shows where value *was*, not where it will be
+
+---
+
 ## Choosing a Strategy
 
 | If you want to... | Use |
 |---|---|
 | Follow the trend and catch big moves | Moving Average Crossover or MACD |
-| Catch reversals and buy dips / sell rallies | RSI |
+| Catch reversals and buy dips / sell rallies | RSI or Market Profile |
 | Catch breakouts from consolidation | Breakout |
 | Trade trending markets (stocks in momentum) | MACD or Moving Average Crossover with longer windows |
-| Trade ranging markets (consolidating stocks) | RSI with standard thresholds |
+| Trade ranging/bracketing markets | Market Profile or RSI |
 | Combine trend + momentum | MACD (built-in) or SMA + RSI together |
 | High-conviction, selective signals | Goslin Momentum (three-line confirmation) |
 | Trade futures or commodities | Goslin Momentum (designed for futures) |
+| Trade around fair value with volume context | Market Profile (Value Area) |
 | Get fewer but higher-confidence signals | Any strategy with wider parameters, or Goslin |
 | Volume-confirmed entries | Breakout with volume_factor > 0 |
 
@@ -411,15 +495,20 @@ The framework supports running multiple strategies simultaneously. Enter `1,2,3,
 | **Histogram** | The difference between the MACD line and its signal line, showing momentum strength. |
 | **Lookback** | How far back in time the framework fetches historical bars. |
 | **MACD** | Moving Average Convergence Divergence — the difference between fast and slow EMAs. |
+| **Market Profile** | A method of organizing price data by volume to reveal fair value and market structure, developed by Peter Steidlmayer. |
 | **Momentum** | The rate of price change — how fast the price is moving up or down. |
 | **Overbought** | A condition where an asset's price has risen quickly and may be due for a pullback. |
 | **Oversold** | A condition where an asset's price has fallen quickly and may be due for a bounce. |
 | **Period** | The number of bars used in a calculation (e.g., 14-period RSI). |
+| **POC** | Point of Control — the price level with the highest volume in a Market Profile, representing fair value. |
 | **RSI** | Relative Strength Index — a momentum oscillator ranging from 0 to 100. |
 | **Signal line** | An EMA of the MACD line, used to generate buy/sell signals on crossover. |
 | **Timing Line** | In Goslin's system, a short-term momentum oscillator (difference of two SMAs) used for trade entry timing. |
 | **Three-Point System** | Goslin's method requiring all three lines (direction, timing, confirming) to agree before trading. |
 | **SMA** | Simple Moving Average — the arithmetic mean of the last N closing prices. |
 | **Signal** | A BUY, SELL, or HOLD recommendation generated by a strategy. |
+| **Value Area** | The price range containing ~70% of trading volume — where the market considers price to be "fair." |
+| **VAH / VAL** | Value Area High and Value Area Low — the upper and lower bounds of the value area. |
 | **Volume confirmation** | Requiring above-average volume to validate a price move (reduces false signals). |
+| **VWAP** | Volume-Weighted Average Price — the average price weighted by volume traded at each level. |
 | **Wilder smoothing** | An exponential moving average method created by J. Welles Wilder Jr., giving more weight to recent data. |
