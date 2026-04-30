@@ -61,6 +61,17 @@ STRATEGY_INFO = {
         ],
         "bars_needed": lambda p: p.get("slow_period", 26) + p.get("signal_period", 9),
     },
+    "goslin_momentum": {
+        "display_name": "Goslin Three-Line Momentum",
+        "short_desc": "Three-line system: direction (trend), timing (entry), confirming (filter).",
+        "params": [
+            {"name": "direction_period", "prompt": "Direction line period (trend SMA)", "default": 49, "type": int},
+            {"name": "timing_short", "prompt": "Timing line short SMA", "default": 3, "type": int},
+            {"name": "timing_long", "prompt": "Timing line long SMA", "default": 10, "type": int},
+            {"name": "confirming_period", "prompt": "Confirming line period", "default": 15, "type": int},
+        ],
+        "bars_needed": lambda p: p.get("direction_period", 49) + p.get("confirming_period", 15) + 1,
+    },
 }
 
 BAR_INTERVALS = ["1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo"]
