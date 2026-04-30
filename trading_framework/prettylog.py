@@ -61,6 +61,11 @@ class PrettyLogger:
             print(f"  {timestamp}  {detail}")
             return
 
+        if message.startswith("[risk]"):
+            detail = message.replace("[risk] ", "")
+            print(f"  {timestamp}  [RISK] {detail}")
+            return
+
         if message.startswith("[dup]"):
             detail = message.replace("[dup] ", "")
             print(f"  {timestamp}  (duplicate) {detail}")

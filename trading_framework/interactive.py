@@ -283,6 +283,34 @@ def run_interactive_setup() -> InteractiveResult:
         )
     _print()
 
+    # --- Risk Management ---
+    risk_config: Optional[Dict[str, Any]] = None
+    use_risk = _ask_yes_no("Enable risk management filters?", False)
+    if use_risk:
+        _print("Configure risk filters (press Enter to skip/disable):")
+        risk_config = {}
+        cd = _ask_int("  Cooldown between signals (seconds, 0=off)", 0)
+        if cd > 0:
+            risk_config["cooldown_seconds"] = cd
+        pos = _ask_yes_no("  Track positions (block duplicate BUY/SELL)?", True)
+        if pos:
+            risk_config["position_aware"] = True
+        sl = _ask_number("  Stop-loss % (0=off)", 0.0, float)
+        if sl > 0:
+            risk_config["stop_loss_pct"] = sl
+        tp = _ask_number("  Take-profit % (0=off)", 0.0, float)
+        if tp > 0:
+            risk_config["take_profit_pct"] = tp
+        mv = _ask_int("  Min volume per bar (0=off)", 0)
+        if mv > 0:
+            risk_config["min_volume"] = mv
+        dl = _ask_int("  Max signals per symbol per day (0=unlimited)", 0)
+        if dl > 0:
+            risk_config["max_signals_per_day"] = dl
+        if not risk_config:
+            risk_config = None
+    _print()
+
     # --- Signal History ---
     use_history = _ask_yes_no("Save signal history to file?", True)
     signal_history: Optional[SignalHistorySettings] = None
@@ -322,6 +350,10 @@ def run_interactive_setup() -> InteractiveResult:
     _print(f"  Lookback:      {lookback}")
     _print(f"  Poll interval: {poll_seconds}s")
     _print(f"  Market hours:  {'US market hours' if use_market_session else 'Always on'}")
+    _print(f"  Risk filters:  {'Enabled' if risk_config else 'Disabled'}")
+    if risk_config:
+        for k, v in risk_config.items():
+            _print(f"    {k}: {v}")
     _print(f"  Signal history: {'Enabled' if signal_history else 'Disabled'}")
     _print("-" * 60)
     _print()
@@ -380,6 +412,7 @@ def run_interactive_setup() -> InteractiveResult:
         market_session=market_session,
         signal_history=signal_history,
         strategies=strategy_settings_list,
+        risk=risk_config,
     )
     return InteractiveResult(settings=settings, run_once=run_once, backtest=is_backtest)
 
