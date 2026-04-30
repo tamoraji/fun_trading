@@ -23,6 +23,7 @@ def load_settings(path: str | Path) -> AppSettings:
     poll_interval_seconds = int(raw.get("poll_interval_seconds", 300))
     market_data = _load_market_data(raw.get("market_data", {}))
     strategy = _load_strategy(raw.get("strategy"))
+    strategies = _load_strategies(raw.get("strategies"))
     market_session = _load_market_session(raw.get("market_session"))
     notifiers = _load_notifiers(raw.get("notifiers", [{"type": "console"}]))
     signal_history = _load_signal_history(raw.get("signal_history"))
@@ -35,7 +36,15 @@ def load_settings(path: str | Path) -> AppSettings:
         notifiers=notifiers,
         market_session=market_session,
         signal_history=signal_history,
+        strategies=strategies,
     )
+
+
+def _load_strategies(raw: Any) -> List[StrategySettings]:
+    """Parse optional 'strategies' list from config. Returns empty list if absent."""
+    if not isinstance(raw, list) or not raw:
+        return []
+    return [_load_strategy(entry) for entry in raw]
 
 
 def _load_symbols(raw_symbols: Any) -> List[str]:

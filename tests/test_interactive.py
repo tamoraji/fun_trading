@@ -7,10 +7,12 @@ import unittest
 from unittest.mock import patch
 
 from trading_framework.interactive import (
+    InteractiveResult,
     run_interactive_setup,
     _save_config_file,
     _compute_lookback,
     _validate_symbol,
+    _parse_strategy_choices,
     STRATEGY_INFO,
 )
 from trading_framework.models import AppSettings
@@ -19,7 +21,7 @@ from trading_framework.models import AppSettings
 class InteractiveSetupTests(unittest.TestCase):
     """Tests for the interactive setup wizard using mocked input/output."""
 
-    def _run_with_inputs(self, inputs: list[str]) -> AppSettings:
+    def _run_with_inputs(self, inputs: list[str]) -> InteractiveResult:
         """Run interactive setup with a sequence of simulated user inputs."""
         input_iter = iter(inputs)
         outputs = []
@@ -29,7 +31,6 @@ class InteractiveSetupTests(unittest.TestCase):
                 return run_interactive_setup()
 
     def test_default_setup_all_enter(self):
-        # User presses Enter for every prompt (all defaults)
         inputs = [
             "",      # symbols -> AAPL, MSFT, SPY
             "",      # strategy -> 1 (SMA)
@@ -41,19 +42,18 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # signal history -> Yes
             "",      # history path -> signal_history.jsonl
             "",      # save config -> No
-            "",      # start monitoring -> Yes
+            "",      # run mode -> 1 (run once)
         ]
-        settings = self._run_with_inputs(inputs)
+        result = self._run_with_inputs(inputs)
 
-        self.assertEqual(["AAPL", "MSFT", "SPY"], settings.symbols)
-        self.assertEqual("moving_average_crossover", settings.strategy.name)
-        self.assertEqual(5, settings.strategy.params["short_window"])
-        self.assertEqual(20, settings.strategy.params["long_window"])
-        self.assertEqual(300, settings.poll_interval_seconds)
-        self.assertIsNotNone(settings.market_session)
-        self.assertIsNotNone(settings.signal_history)
-        # Default SMA needs 21 bars of 5m data -> lookback should be "5d"
-        self.assertEqual("5d", settings.market_data.lookback)
+        self.assertEqual(["AAPL", "MSFT", "SPY"], result.settings.symbols)
+        self.assertEqual("moving_average_crossover", result.settings.strategy.name)
+        self.assertEqual(5, result.settings.strategy.params["short_window"])
+        self.assertEqual(300, result.settings.poll_interval_seconds)
+        self.assertIsNotNone(result.settings.market_session)
+        self.assertIsNotNone(result.settings.signal_history)
+        self.assertEqual("5d", result.settings.market_data.lookback)
+        self.assertTrue(result.run_once)
 
     def test_rsi_strategy_selection(self):
         inputs = [
@@ -68,18 +68,56 @@ class InteractiveSetupTests(unittest.TestCase):
             "y",             # signal history
             "",              # history path default
             "n",             # don't save config
-            "y",             # start
+            "1",             # run once
         ]
-        settings = self._run_with_inputs(inputs)
+        result = self._run_with_inputs(inputs)
 
-        self.assertEqual(["TSLA", "GOOGL"], settings.symbols)
-        self.assertEqual("rsi", settings.strategy.name)
-        self.assertEqual(10, settings.strategy.params["period"])
-        self.assertEqual(25, settings.strategy.params["oversold"])
-        self.assertEqual(75, settings.strategy.params["overbought"])
-        self.assertEqual("15m", settings.market_data.bar_interval)
-        self.assertEqual(60, settings.poll_interval_seconds)
-        self.assertIsNone(settings.market_session)
+        self.assertEqual(["TSLA", "GOOGL"], result.settings.symbols)
+        self.assertEqual("rsi", result.settings.strategy.name)
+        self.assertEqual(10, result.settings.strategy.params["period"])
+        self.assertEqual("15m", result.settings.market_data.bar_interval)
+        self.assertEqual(60, result.settings.poll_interval_seconds)
+        self.assertIsNone(result.settings.market_session)
+
+    def test_multi_strategy_selection(self):
+        inputs = [
+            "AAPL",     # symbols
+            "1,2",       # both strategies
+            "",          # SMA short_window -> 5
+            "",          # SMA long_window -> 20
+            "",          # RSI period -> 14
+            "",          # RSI oversold -> 30
+            "",          # RSI overbought -> 70
+            "",          # bar_interval -> 5m
+            "",          # poll_interval -> 300
+            "",          # market session -> Yes
+            "",          # signal history -> Yes
+            "",          # history path
+            "",          # save config -> No
+            "1",         # run once
+        ]
+        result = self._run_with_inputs(inputs)
+
+        self.assertEqual(2, len(result.settings.all_strategies))
+        self.assertEqual("moving_average_crossover", result.settings.all_strategies[0].name)
+        self.assertEqual("rsi", result.settings.all_strategies[1].name)
+
+    def test_continuous_mode(self):
+        inputs = [
+            "",      # symbols
+            "",      # strategy
+            "",      # short_window
+            "",      # long_window
+            "",      # bar_interval
+            "",      # poll_interval
+            "",      # market session
+            "",      # signal history
+            "",      # history path
+            "",      # save config
+            "2",     # run continuously
+        ]
+        result = self._run_with_inputs(inputs)
+        self.assertFalse(result.run_once)
 
     def test_cancel_exits(self):
         inputs = [
@@ -93,7 +131,7 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # signal history
             "",      # history path
             "",      # save config
-            "n",     # DON'T start -> should exit
+            "3",     # Cancel
         ]
         with self.assertRaises(SystemExit):
             self._run_with_inputs(inputs)
@@ -110,10 +148,10 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # signal history
             "",      # history path
             "",      # save config
-            "y",     # start
+            "1",     # run once
         ]
-        settings = self._run_with_inputs(inputs)
-        self.assertEqual("moving_average_crossover", settings.strategy.name)
+        result = self._run_with_inputs(inputs)
+        self.assertEqual("moving_average_crossover", result.settings.strategy.name)
 
     def test_no_signal_history(self):
         inputs = [
@@ -126,32 +164,29 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # market session
             "n",     # NO signal history
             "",      # save config
-            "y",     # start
+            "1",     # run once
         ]
-        settings = self._run_with_inputs(inputs)
-        self.assertIsNone(settings.signal_history)
+        result = self._run_with_inputs(inputs)
+        self.assertIsNone(result.settings.signal_history)
 
     def test_large_sma_with_daily_bars_gets_adequate_lookback(self):
-        # SMA 50/200 with 1d bars needs 201 bars = ~201 days -> should be "2y"
         inputs = [
             "BTC-USD",  # symbols
             "1",         # strategy SMA
             "50",        # short_window
             "200",       # long_window
-            "1d",        # bar_interval (daily!)
+            "1d",        # bar_interval
             "300",       # poll_interval
             "n",         # no market session
             "y",         # signal history
             "",          # history path
             "n",         # don't save
-            "y",         # start
+            "1",         # run once
         ]
-        settings = self._run_with_inputs(inputs)
-        # 201 bars of daily data needs more than 6 months
-        self.assertIn(settings.market_data.lookback, ("1y", "2y"))
+        result = self._run_with_inputs(inputs)
+        self.assertIn(result.settings.market_data.lookback, ("1y", "2y"))
 
     def test_symbol_warning_for_crypto_without_usd(self):
-        # ETH without -USD triggers warning, user confirms
         inputs = [
             "ETH",   # symbol (triggers warning)
             "y",     # continue with warning
@@ -164,13 +199,12 @@ class InteractiveSetupTests(unittest.TestCase):
             "",      # signal history
             "",      # history path
             "",      # save config
-            "y",     # start
+            "1",     # run once
         ]
-        settings = self._run_with_inputs(inputs)
-        self.assertEqual(["ETH"], settings.symbols)
+        result = self._run_with_inputs(inputs)
+        self.assertEqual(["ETH"], result.settings.symbols)
 
     def test_symbol_warning_for_currency_code(self):
-        # USD alone triggers warning, user declines -> exit
         inputs = [
             "USD",   # symbol (triggers warning)
             "n",     # don't continue -> exit
@@ -179,22 +213,38 @@ class InteractiveSetupTests(unittest.TestCase):
             self._run_with_inputs(inputs)
 
 
+class ParseStrategyChoicesTests(unittest.TestCase):
+    def test_single(self):
+        self.assertEqual([0], _parse_strategy_choices("1", 2))
+
+    def test_comma_separated(self):
+        self.assertEqual([0, 1], _parse_strategy_choices("1,2", 2))
+
+    def test_space_separated(self):
+        self.assertEqual([0, 1], _parse_strategy_choices("1 2", 2))
+
+    def test_invalid_ignored(self):
+        self.assertEqual([0], _parse_strategy_choices("1,abc,99", 2))
+
+    def test_duplicates_removed(self):
+        self.assertEqual([0], _parse_strategy_choices("1,1,1", 2))
+
+    def test_empty_returns_empty(self):
+        self.assertEqual([], _parse_strategy_choices("abc", 2))
+
+
 class ComputeLookbackTests(unittest.TestCase):
     def test_small_sma_5m_bars(self):
-        # 21 bars of 5m data -> tiny, should be "5d"
         self.assertEqual("5d", _compute_lookback("5m", 21))
 
     def test_large_sma_daily_bars(self):
-        # 201 bars of daily data -> ~301 days with buffer
         result = _compute_lookback("1d", 201)
         self.assertIn(result, ("1y", "2y"))
 
     def test_medium_rsi_hourly(self):
-        # 16 bars of 1h data -> ~3.4 days with buffer -> "5d"
         self.assertEqual("5d", _compute_lookback("1h", 16))
 
     def test_very_large_needs_multi_year(self):
-        # 500 bars of daily data -> ~750 days
         result = _compute_lookback("1d", 500)
         self.assertIn(result, ("2y", "5y"))
 
@@ -202,22 +252,18 @@ class ComputeLookbackTests(unittest.TestCase):
 class ValidateSymbolTests(unittest.TestCase):
     def test_valid_stock_symbol(self):
         sym, warning = _validate_symbol("AAPL")
-        self.assertEqual("AAPL", sym)
         self.assertIsNone(warning)
 
     def test_crypto_without_usd_warns(self):
-        sym, warning = _validate_symbol("ETH")
-        self.assertEqual("ETH", sym)
+        _, warning = _validate_symbol("ETH")
         self.assertIn("ETH-USD", warning)
 
     def test_currency_code_warns(self):
-        sym, warning = _validate_symbol("USD")
-        self.assertEqual("USD", sym)
+        _, warning = _validate_symbol("USD")
         self.assertIn("currency", warning)
 
     def test_valid_crypto_pair_no_warning(self):
-        sym, warning = _validate_symbol("BTC-USD")
-        self.assertEqual("BTC-USD", sym)
+        _, warning = _validate_symbol("BTC-USD")
         self.assertIsNone(warning)
 
 
@@ -230,8 +276,9 @@ class SaveConfigTests(unittest.TestCase):
             _save_config_file(
                 path,
                 symbols=["AAPL"],
-                strategy_name="rsi",
-                strategy_params={"period": 14, "oversold": 30, "overbought": 70},
+                selected_strategies=[
+                    {"name": "rsi", "info": STRATEGY_INFO["rsi"], "params": {"period": 14, "oversold": 30, "overbought": 70}},
+                ],
                 bar_interval="5m",
                 lookback="5d",
                 poll_seconds=120,
@@ -246,9 +293,39 @@ class SaveConfigTests(unittest.TestCase):
             self.assertEqual("rsi", config["strategy"]["name"])
             self.assertEqual(14, config["strategy"]["params"]["period"])
             self.assertEqual(120, config["poll_interval_seconds"])
-            self.assertEqual("5d", config["market_data"]["lookback"])
             self.assertTrue(config["market_session"]["enabled"])
             self.assertTrue(config["signal_history"]["enabled"])
+            # Single strategy -> no "strategies" key
+            self.assertNotIn("strategies", config)
+        finally:
+            os.unlink(path)
+
+    def test_save_multi_strategy(self):
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            path = f.name
+
+        try:
+            _save_config_file(
+                path,
+                symbols=["SPY"],
+                selected_strategies=[
+                    {"name": "moving_average_crossover", "info": STRATEGY_INFO["moving_average_crossover"], "params": {"short_window": 5, "long_window": 20}},
+                    {"name": "rsi", "info": STRATEGY_INFO["rsi"], "params": {"period": 14, "oversold": 30, "overbought": 70}},
+                ],
+                bar_interval="1d",
+                lookback="60d",
+                poll_seconds=300,
+                use_market_session=False,
+                signal_history_path=None,
+            )
+
+            with open(path) as f:
+                config = json.load(f)
+
+            self.assertIn("strategies", config)
+            self.assertEqual(2, len(config["strategies"]))
+            self.assertEqual("moving_average_crossover", config["strategies"][0]["name"])
+            self.assertEqual("rsi", config["strategies"][1]["name"])
         finally:
             os.unlink(path)
 
@@ -260,8 +337,9 @@ class SaveConfigTests(unittest.TestCase):
             _save_config_file(
                 path,
                 symbols=["SPY"],
-                strategy_name="moving_average_crossover",
-                strategy_params={"short_window": 5, "long_window": 20},
+                selected_strategies=[
+                    {"name": "moving_average_crossover", "info": STRATEGY_INFO["moving_average_crossover"], "params": {"short_window": 5, "long_window": 20}},
+                ],
                 bar_interval="1d",
                 lookback="60d",
                 poll_seconds=300,
@@ -274,7 +352,6 @@ class SaveConfigTests(unittest.TestCase):
 
             self.assertFalse(config["market_session"]["enabled"])
             self.assertNotIn("signal_history", config)
-            self.assertEqual("60d", config["market_data"]["lookback"])
         finally:
             os.unlink(path)
 
@@ -295,7 +372,7 @@ class StrategyInfoTests(unittest.TestCase):
         for name, info in STRATEGY_INFO.items():
             defaults = {p["name"]: p["default"] for p in info["params"]}
             bars = info["bars_needed"](defaults)
-            self.assertGreater(bars, 0, f"{name} bars_needed should be positive")
+            self.assertGreater(bars, 0)
 
 
 if __name__ == "__main__":

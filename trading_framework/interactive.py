@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from dataclasses import dataclass
+
 from .models import (
     AppSettings,
     MarketDataConfig,
@@ -12,6 +14,12 @@ from .models import (
     SignalHistorySettings,
     StrategySettings,
 )
+
+
+@dataclass
+class InteractiveResult:
+    settings: AppSettings
+    run_once: bool
 
 STRATEGY_INFO = {
     "moving_average_crossover": {
@@ -70,6 +78,19 @@ def _ask_int(prompt: str, default: int) -> int:
         return default
 
 
+def _parse_strategy_choices(raw: str, max_count: int) -> List[int]:
+    """Parse comma or space-separated strategy numbers into 0-based indices."""
+    indices = []
+    for part in raw.replace(",", " ").split():
+        try:
+            idx = int(part.strip()) - 1
+            if 0 <= idx < max_count and idx not in indices:
+                indices.append(idx)
+        except ValueError:
+            continue
+    return indices
+
+
 def _ask_yes_no(prompt: str, default: bool = True) -> bool:
     hint = "Y/n" if default else "y/N"
     raw = _input(f"{prompt} [{hint}]: ").strip().lower()
@@ -122,7 +143,7 @@ def _validate_symbol(symbol: str) -> tuple[str, str | None]:
     return symbol, None
 
 
-def run_interactive_setup() -> AppSettings:
+def run_interactive_setup() -> InteractiveResult:
     """Guide the user through setting up a trading session interactively."""
     _print()
     _print("=" * 60)
@@ -161,6 +182,7 @@ def run_interactive_setup() -> AppSettings:
 
     # --- Strategy ---
     _print("Which strategy would you like to use?")
+    _print("  You can pick multiple: e.g. 1,2")
     _print()
     strategy_keys = list(STRATEGY_INFO.keys())
     for i, key in enumerate(strategy_keys, 1):
@@ -169,27 +191,33 @@ def run_interactive_setup() -> AppSettings:
         _print(f"     {info['short_desc']}")
         _print()
 
-    choice = _ask("Choose strategy number", "1")
-    try:
-        strategy_index = int(choice) - 1
-        if strategy_index < 0 or strategy_index >= len(strategy_keys):
-            raise ValueError()
-    except ValueError:
-        strategy_index = 0
-        _print(f"  Invalid choice. Enter a number from 1 to {len(strategy_keys)}. Using default: 1")
+    choice = _ask("Choose strategy number(s)", "1")
+    selected_indices = _parse_strategy_choices(choice, len(strategy_keys))
+    if not selected_indices:
+        selected_indices = [0]
+        _print(f"  Invalid choice. Using default: 1")
 
-    strategy_name = strategy_keys[strategy_index]
-    strategy_info = STRATEGY_INFO[strategy_name]
-    _print(f"  -> Strategy: {strategy_info['display_name']}")
+    selected_strategies: List[Dict[str, Any]] = []
+    for idx in selected_indices:
+        name = strategy_keys[idx]
+        info = STRATEGY_INFO[name]
+        selected_strategies.append({"name": name, "info": info, "params": {}})
+
+    names = [s["info"]["display_name"] for s in selected_strategies]
+    _print(f"  -> {'Strategy' if len(names) == 1 else 'Strategies'}: {', '.join(names)}")
     _print()
 
     # --- Strategy Parameters ---
-    _print("Configure strategy parameters (press Enter for defaults):")
-    strategy_params: Dict[str, Any] = {}
-    for param in strategy_info["params"]:
-        value = _ask_int(f"  {param['prompt']}", param["default"])
-        strategy_params[param["name"]] = value
-    _print()
+    for strat in selected_strategies:
+        info = strat["info"]
+        if len(selected_strategies) > 1:
+            _print(f"Configure {info['display_name']}:")
+        else:
+            _print("Configure strategy parameters (press Enter for defaults):")
+        for param in info["params"]:
+            value = _ask_int(f"  {param['prompt']}", param["default"])
+            strat["params"][param["name"]] = value
+        _print()
 
     # --- Bar Interval ---
     _print("What bar interval should be used for price data?")
@@ -201,8 +229,11 @@ def run_interactive_setup() -> AppSettings:
     _print()
 
     # --- Auto-compute lookback ---
-    bars_needed_fn = strategy_info.get("bars_needed")
-    bars_needed = bars_needed_fn(strategy_params) if bars_needed_fn else 21
+    bars_needed = 21
+    for strat in selected_strategies:
+        fn = strat["info"].get("bars_needed")
+        if fn:
+            bars_needed = max(bars_needed, fn(strat["params"]))
     lookback = _compute_lookback(bar_interval, bars_needed)
     _print(f"  Auto-calculated lookback: {lookback} (need ~{bars_needed} bars of {bar_interval} data)")
     _print()
@@ -242,8 +273,7 @@ def run_interactive_setup() -> AppSettings:
         _save_config_file(
             config_path,
             symbols=symbols,
-            strategy_name=strategy_name,
-            strategy_params=strategy_params,
+            selected_strategies=selected_strategies,
             bar_interval=bar_interval,
             lookback=lookback,
             poll_seconds=poll_seconds,
@@ -259,9 +289,10 @@ def run_interactive_setup() -> AppSettings:
     _print("  Configuration Summary")
     _print("-" * 60)
     _print(f"  Symbols:       {', '.join(symbols)}")
-    _print(f"  Strategy:      {strategy_info['display_name']}")
-    for param in strategy_info["params"]:
-        _print(f"    {param['prompt']}: {strategy_params[param['name']]}")
+    for strat in selected_strategies:
+        _print(f"  Strategy:      {strat['info']['display_name']}")
+        for param in strat["info"]["params"]:
+            _print(f"    {param['prompt']}: {strat['params'][param['name']]}")
     _print(f"  Bar interval:  {bar_interval}")
     _print(f"  Lookback:      {lookback}")
     _print(f"  Poll interval: {poll_seconds}s")
@@ -270,16 +301,29 @@ def run_interactive_setup() -> AppSettings:
     _print("-" * 60)
     _print()
 
-    confirm = _ask_yes_no("Start monitoring?", True)
-    if not confirm:
+    _print("How would you like to run?")
+    _print("  1. Run once (analyze now and exit)")
+    _print("  2. Monitor continuously (poll every {0}s)".format(poll_seconds))
+    _print("  3. Cancel")
+    run_choice = _ask("Choose", "1")
+    if run_choice == "3":
         _print("Setup cancelled.")
         raise SystemExit(0)
+    run_once = run_choice != "2"
 
     _print()
-    _print("Starting... (press Ctrl+C to stop)")
+    if run_once:
+        _print("Running analysis...")
+    else:
+        _print("Starting continuous monitoring... (press Ctrl+C to stop)")
     _print()
 
-    return AppSettings(
+    strategy_settings_list = [
+        StrategySettings(name=s["name"], params=s["params"])
+        for s in selected_strategies
+    ]
+
+    settings = AppSettings(
         symbols=symbols,
         poll_interval_seconds=poll_seconds,
         market_data=MarketDataConfig(
@@ -288,24 +332,30 @@ def run_interactive_setup() -> AppSettings:
             lookback=lookback,
             timeout_seconds=10,
         ),
-        strategy=StrategySettings(name=strategy_name, params=strategy_params),
+        strategy=strategy_settings_list[0],
         notifiers=[NotifierSettings(type="console")],
         market_session=market_session,
         signal_history=signal_history,
+        strategies=strategy_settings_list,
     )
+    return InteractiveResult(settings=settings, run_once=run_once)
 
 
 def _save_config_file(
     path: str,
     symbols: List[str],
-    strategy_name: str,
-    strategy_params: Dict[str, Any],
+    selected_strategies: List[Dict[str, Any]],
     bar_interval: str,
     lookback: str,
     poll_seconds: int,
     use_market_session: bool,
     signal_history_path: str | None,
 ) -> None:
+    strategy_configs = [
+        {"name": s["name"], "params": s["params"]}
+        for s in selected_strategies
+    ]
+
     config: Dict[str, Any] = {
         "symbols": symbols,
         "poll_interval_seconds": poll_seconds,
@@ -315,11 +365,11 @@ def _save_config_file(
             "lookback": lookback,
             "timeout_seconds": 10,
         },
-        "strategy": {
-            "name": strategy_name,
-            "params": strategy_params,
-        },
+        "strategy": strategy_configs[0],
+        "strategies": strategy_configs if len(strategy_configs) > 1 else None,
     }
+    if config["strategies"] is None:
+        del config["strategies"]
 
     if use_market_session:
         config["market_session"] = {
