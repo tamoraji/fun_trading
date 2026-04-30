@@ -121,6 +121,25 @@ def _buy_and_hold(bars: List[PriceBar]) -> float:
     return round((bars[-1].close - bars[0].close) / bars[0].close * 100, 4)
 
 
+def format_trades(trades: List[Trade]) -> str:
+    """Format a trade log showing each round-trip trade."""
+    if not trades:
+        return "  No trades."
+    lines = [
+        f"  {'#':<4} {'Entry':>10} {'Action':<5} {'Entry $':>9} {'Exit $':>9} {'P&L':>8} {'Days':>5}",
+        "  " + "-" * 56,
+    ]
+    for i, t in enumerate(trades, 1):
+        sign = "+" if t.profit_pct >= 0 else ""
+        days = (t.exit_timestamp - t.entry_timestamp).days
+        lines.append(
+            f"  {i:<4} {t.entry_timestamp.strftime('%Y-%m-%d'):>10} "
+            f"{t.entry_action:<5} {t.entry_price:>9.2f} {t.exit_price:>9.2f} "
+            f"{sign}{t.profit_pct:>6.2f}% {days:>5}"
+        )
+    return "\n".join(lines)
+
+
 def format_report(
     symbol: str,
     strategy_name: str,
@@ -129,6 +148,7 @@ def format_report(
     num_bars: int,
     start_date: datetime,
     end_date: datetime,
+    trades: List[Trade] | None = None,
 ) -> str:
     pf = f"{metrics.profit_factor:.2f}" if metrics.profit_factor != float('inf') else "inf"
     sign = lambda v: f"+{v:.2f}" if v >= 0 else f"{v:.2f}"
@@ -150,8 +170,14 @@ def format_report(
         f"  Profit factor:    {pf}",
         f"  Max drawdown:     -{metrics.max_drawdown_pct:.2f}%",
         f"  Sharpe ratio:     {metrics.sharpe_ratio:.2f}",
-        "=" * 60,
     ]
+
+    if trades:
+        lines.append("-" * 60)
+        lines.append("  Trade Log:")
+        lines.append(format_trades(trades))
+
+    lines.append("=" * 60)
     return "\n".join(lines)
 
 

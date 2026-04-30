@@ -12,6 +12,14 @@ from .strategy import create_strategy
 from .structlog import StructuredLogger
 
 
+STRATEGY_DISPLAY_NAMES = {
+    "moving_average_crossover": "SMA Crossover",
+    "rsi": "RSI",
+    "breakout": "Breakout",
+    "macd": "MACD",
+}
+
+
 def _run_backtest(settings) -> int:
     from .backtest import run_backtest
     from .metrics import compute_metrics, format_report, format_comparison
@@ -32,20 +40,22 @@ def _run_backtest(settings) -> int:
             bt_result = run_backtest(strategy, symbol, bars)
             metrics = compute_metrics(bt_result.trades, bt_result.bars)
 
+            display_name = STRATEGY_DISPLAY_NAMES.get(strategy.name, strategy.name)
             start_date = bars[0].timestamp if bars else None
             end_date = bars[-1].timestamp if bars else None
 
             report = format_report(
                 symbol=symbol,
-                strategy_name=strategy.name,
+                strategy_name=display_name,
                 metrics=metrics,
                 num_signals=len(bt_result.signals),
                 num_bars=len(bars),
                 start_date=start_date,
                 end_date=end_date,
+                trades=bt_result.trades,
             )
             print(report)
-            all_results.append((f"{symbol}/{strategy.name}", metrics))
+            all_results.append((f"{symbol}/{display_name}", metrics))
 
     if len(all_results) > 1:
         print(format_comparison(all_results))
