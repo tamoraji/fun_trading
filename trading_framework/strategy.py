@@ -575,6 +575,14 @@ def create_strategy(settings: StrategySettings) -> Strategy:
             lookback=int(settings.params.get("lookback", 20)),
             value_area_pct=float(settings.params.get("value_area_pct", 70.0)),
         )
+    # Fall back to plugin registry for strategies registered via @register_strategy
+    try:
+        # Ensure strategy modules are imported (triggers registration)
+        import trading_framework.analytics.ml.models  # noqa: F401
+        from .infra.plugin import create_strategy_from_registry
+        return create_strategy_from_registry(settings)
+    except (ImportError, ValueError):
+        pass
     raise ValueError(f"Unsupported strategy: {settings.name}")
 
 
