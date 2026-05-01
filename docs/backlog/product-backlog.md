@@ -183,9 +183,9 @@ Initial stories:
 
 - DATA-001 Add Alpha Vantage data provider
 - DATA-002 Add Polygon.io data provider for real-time and historical data
-- DATA-003 Add CSV/file-based data import for custom datasets
+- ~~DATA-003 Add CSV/file-based data import for custom datasets~~ DONE
 - ~~DATA-004 Add local data caching layer~~ DONE
-- DATA-005 Add data resampling (convert 1m bars to 5m, 15m, 1h, daily)
+- ~~DATA-005 Add data resampling (convert 1m bars to 5m, 15m, 1h, daily)~~ DONE
 - DATA-006 Add multiple timeframe alignment and synchronization
 - DATA-007 Add corporate action adjustments (splits, dividends)
 - DATA-008 Add data quality checks (gap detection, stale data, outlier filtering)

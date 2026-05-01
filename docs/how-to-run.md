@@ -268,6 +268,46 @@ Simulate execution without real money. Tracks positions, cash, and P&L:
 
 Portfolio state is saved between sessions — positions carry over.
 
+### CSV Data Import
+
+Load historical data from CSV files for offline backtesting:
+
+```python
+from trading_framework.data.providers.csv import CSVDataProvider
+
+provider = CSVDataProvider(data_dir="./data")
+bars = provider.fetch_bars("AAPL", config)  # loads ./data/AAPL.csv
+```
+
+CSV format: `date,open,high,low,close,volume` (header row required).
+
+### Data Manager (Multi-Source Routing)
+
+Routes requests to the right provider based on asset class:
+
+```python
+from trading_framework.data.manager import DataManager
+from trading_framework.core.types import AssetClass
+
+manager = DataManager(default_provider=yahoo_provider)
+manager.register_provider(AssetClass.CRYPTO, crypto_provider)
+
+manager.fetch_bars("AAPL", config)    # → yahoo (stock)
+manager.fetch_bars("BTC-USD", config) # → crypto provider
+manager.fetch_bars("EURUSD=X", config) # → yahoo (forex, default)
+```
+
+### Timeframe Resampling
+
+Convert bars between intervals:
+
+```python
+from trading_framework.data.resampler import resample
+
+hourly = resample(minute_bars, "1h")
+daily = resample(hourly_bars, "1d")
+```
+
 ### Data Caching
 
 Cache market data locally to avoid redundant API calls:
