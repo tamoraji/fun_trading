@@ -304,6 +304,10 @@ python -m pytest tests/test_history.py -v            # Signal history
 python -m pytest tests/test_interactive.py -v        # Interactive wizard
 ```
 
+## Architecture
+
+See `docs/architecture.md` for the full 8-layer architecture, dependency rules, and migration status.
+
 ## Troubleshooting
 
 **"No usable price bars returned"** — Yahoo Finance may be down or the symbol is invalid. Check your internet connection and verify the symbol exists on Yahoo Finance.
