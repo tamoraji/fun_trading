@@ -121,5 +121,35 @@ class TradingEngineTests(unittest.TestCase):
         self.assertEqual("AAPL", history.signals[0].symbol)
 
 
+    def test_engine_publishes_events_to_bus(self):
+        from trading_framework.core.events import SignalEmitted, CycleStarted, CycleCompleted
+
+        provider = FakeProvider({"AAPL": build_bars("AAPL", [12, 12, 12, 12, 12, 10, 9, 8, 9, 12])})
+        engine = TradingEngine(
+            settings=self._settings(),
+            provider=provider,
+            strategy=MovingAverageCrossoverStrategy(short_window=3, long_window=5),
+            notifiers=[],
+            logger=lambda _: None,
+        )
+
+        events_received = []
+        engine.event_bus.subscribe(CycleStarted, lambda e: events_received.append(("cycle_start", e)))
+        engine.event_bus.subscribe(SignalEmitted, lambda e: events_received.append(("signal", e)))
+        engine.event_bus.subscribe(CycleCompleted, lambda e: events_received.append(("cycle_end", e)))
+
+        engine.run_cycle()
+
+        event_types = [t for t, _ in events_received]
+        self.assertIn("cycle_start", event_types)
+        self.assertIn("signal", event_types)
+        self.assertIn("cycle_end", event_types)
+
+        # Verify signal event has correct data
+        signal_event = next(e for t, e in events_received if t == "signal")
+        self.assertEqual("AAPL", signal_event.signal.symbol)
+        self.assertEqual("BUY", signal_event.signal.action)
+
+
 if __name__ == "__main__":
     unittest.main()

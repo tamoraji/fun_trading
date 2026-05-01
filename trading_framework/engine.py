@@ -4,8 +4,10 @@ import time
 from datetime import datetime, timezone
 from typing import Callable, Dict, List, Tuple
 
+from .core.events import SignalEmitted, SignalBlocked, CycleStarted, CycleCompleted, DataError
 from .data import MarketDataProvider
 from .history import SignalHistory, NullHistory
+from .infra.event_bus import EventBus
 from .models import AppSettings, HOLD, Signal
 from .notifiers import Notifier
 from .risk import NullRiskManager
@@ -26,6 +28,7 @@ class TradingEngine:
         strategies: List[Strategy] | None = None,
         risk_manager=None,
         portfolio=None,
+        event_bus: EventBus | None = None,
     ):
         self.settings = settings
         self.provider = provider
@@ -34,6 +37,7 @@ class TradingEngine:
         self.history = history or NullHistory()
         self.risk_manager = risk_manager or NullRiskManager()
         self.portfolio = portfolio
+        self.event_bus = event_bus or EventBus()
         self.clock = clock or (lambda: datetime.now(timezone.utc))
         self.sleeper = sleeper or time.sleep
         self.logger = logger or print
@@ -46,6 +50,7 @@ class TradingEngine:
             return []
 
         self.logger(f"[cycle_start] symbols={self.settings.symbols}")
+        self.event_bus.publish(CycleStarted(timestamp=cycle_time, symbols=self.settings.symbols))
 
         started = time.monotonic()
         emitted: List[Signal] = []
@@ -57,6 +62,7 @@ class TradingEngine:
                 bars = self.provider.fetch_bars(symbol, self.settings.market_data)
             except Exception as exc:  # pragma: no cover - defensive logging
                 self.logger(f"[error] {symbol}: {exc}")
+                self.event_bus.publish(DataError(symbol=symbol, error=str(exc)))
                 errors += 1
                 continue
 
@@ -78,6 +84,7 @@ class TradingEngine:
                 if signal.action == HOLD:
                     risk_filter = signal.details.get("risk_filter", "unknown")
                     self.logger(f"[risk] {symbol}/{signal.strategy_name}: blocked by {risk_filter} — {signal.reason}")
+                    self.event_bus.publish(SignalBlocked(signal=signal, reason=signal.reason, filter_name=risk_filter))
                     holds += 1
                     continue
 
@@ -97,6 +104,7 @@ class TradingEngine:
 
                 self._last_signal_keys[dedup_key] = signal_key
                 self.logger(f"[signal] {symbol}/{signal.strategy_name}: {signal.action} at {signal.price:.2f}")
+                self.event_bus.publish(SignalEmitted(signal=signal, bars=bars))
                 emitted.append(signal)
 
                 if self.portfolio:
@@ -110,6 +118,10 @@ class TradingEngine:
             f"[cycle_end] signals={len(emitted)} holds={holds} errors={errors} "
             f"elapsed={elapsed:.3f}s"
         )
+        self.event_bus.publish(CycleCompleted(
+            timestamp=cycle_time, signals_emitted=len(emitted),
+            holds=holds, errors=errors, elapsed_seconds=elapsed,
+        ))
 
         if self.portfolio:
             self.logger(
