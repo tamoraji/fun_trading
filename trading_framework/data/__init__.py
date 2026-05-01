@@ -27,6 +27,12 @@ create_market_data_provider = _mod.create_market_data_provider
 del _ilu, _pl, _data_flat, _spec, _mod
 
 
+# New data layer modules
+from .manager import DataManager
+from .resampler import resample
+from .providers.csv import CSVDataProvider
+
+
 def __getattr__(name):
     """Lazy import to avoid circular dependency with cache.py."""
     if name == "CachedDataProvider":
