@@ -131,8 +131,8 @@ Shared indicator math in `indicators.py` (RSI, EMA, SMA, value area).
 
 | Package | Status | Notes |
 |---------|--------|-------|
-| `core/` | Scaffolded | Re-exports from flat `models.py` |
-| `infra/` | Scaffolded | Event bus and plugin registry planned for Phase 1 |
+| `core/` | **Active** | types.py (BUY/SELL/HOLD, Confidence, AssetClass), events.py (8 event types), interfaces.py (6 ABCs) |
+| `infra/` | **Active** | event_bus.py (sync pub/sub), plugin.py (strategy registry with @register_strategy) |
 | `data/` | Scaffolded | Re-exports from flat `data.py` + `cache.py` |
 | `strategies/` | Scaffolded | Re-exports from flat `strategy.py`. Split planned for Phase 2 |
 | `signals/` | Scaffolded | Re-exports from flat `notifiers.py` + `history.py` |
@@ -142,4 +142,4 @@ Shared indicator math in `indicators.py` (RSI, EMA, SMA, value area).
 | `service/` | Scaffolded | TradingService planned for Phase 2 |
 | `ui/` | Scaffolded | CLI refactor planned for Phase 2 |
 
-Current state: flat modules still contain all logic. New packages provide re-exports for forward-compatible imports. All 171 tests pass with both old and new import paths.
+The flat modules still contain all implementation logic. New packages provide re-exports for forward-compatible imports plus new infrastructure (event bus, plugin registry, core types/events/interfaces). The engine publishes events to the bus at all key points (cycle start/end, signal emitted, signal blocked, data error). 194 tests pass.

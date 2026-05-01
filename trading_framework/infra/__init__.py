@@ -8,3 +8,5 @@ Provides the foundational infrastructure that all higher layers use:
 
 Dependencies: core only.
 """
+from .event_bus import EventBus
+from .plugin import register_strategy, create_strategy_from_registry, list_strategies
