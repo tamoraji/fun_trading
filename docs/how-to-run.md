@@ -185,6 +185,51 @@ Or choose "5. Web Dashboard" in the wizard. Requires `pip install -e ".[web]"`.
 
 See `docs/strategy-manual.md` for detailed explanations.
 
+### Smart Signals (Confidence Scoring)
+
+When running multiple strategies, the framework scores signals by multi-strategy agreement:
+
+| Confidence | Criteria | Example |
+|-----------|----------|---------|
+| **HIGH** | 50%+ of strategies agree | 3/6 strategies say BUY |
+| **MEDIUM** | 30-49% agree | 2/6 agree |
+| **LOW** | Single strategy | 1/6 says BUY |
+
+The notification router dispatches by confidence level — e.g., only HIGH confidence signals go to Telegram, while everything is logged locally.
+
+```python
+# Programmatic usage
+from trading_framework.signals import SignalAggregator, NotificationRouter
+from trading_framework.core.types import Confidence
+
+aggregator = SignalAggregator(event_bus=engine.event_bus, total_strategies=6)
+router = NotificationRouter()
+router.add_channel("telegram", telegram_notifier.send_aggregated, Confidence.HIGH)
+router.add_channel("console", print, Confidence.LOW)
+```
+
+### Telegram Notifications
+
+Send signals to your phone via Telegram Bot:
+
+1. Create a bot via `@BotFather` on Telegram
+2. Get your chat ID from `@userinfobot`
+3. Configure in JSON config:
+
+```json
+"notifiers": [
+    {"type": "console"},
+    {"type": "telegram", "bot_token": "YOUR_TOKEN", "chat_id": "YOUR_CHAT_ID"}
+]
+```
+
+Or use programmatically:
+```python
+from trading_framework.signals.notifiers.telegram import TelegramNotifier
+notifier = TelegramNotifier(bot_token="123:ABC", chat_id="-100123")
+notifier.send(signal)
+```
+
 ### Risk Management
 
 Enable in wizard or config to protect against naive signals:
