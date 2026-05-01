@@ -426,6 +426,47 @@ python -m pytest tests/test_history.py -v            # Signal history
 python -m pytest tests/test_interactive.py -v        # Interactive wizard
 ```
 
+### ML Features and Regime Detection
+
+Extract features for ML model input:
+
+```python
+from trading_framework.analytics.ml import extract_features
+features = extract_features(bars, lookback=20)
+# 14 features: return_1d, return_5d, sma, std, rsi_14, bollinger_pct,
+#              volume_ratio, volatility, high_low_pct, price_vs_sma, etc.
+```
+
+Detect current market regime:
+
+```python
+from trading_framework.analytics import detect_regime, MarketRegime
+regime = detect_regime(bars, lookback=20)
+if regime == MarketRegime.TRENDING_UP:
+    # use trend-following strategy
+elif regime == MarketRegime.RANGING:
+    # use mean-reversion strategy
+```
+
+ML-powered strategy (strategy #7):
+
+```python
+# Momentum ML uses feature scoring to generate signals
+# Available as strategy "momentum_ml" in the wizard
+```
+
+### Transaction Cost Modeling
+
+Add slippage and commission to backtests:
+
+```python
+from trading_framework.analytics import CostModel, apply_costs, cost_summary
+model = CostModel(slippage_pct=0.1, commission_per_trade=1.0)
+adjusted = apply_costs(trades, model)
+summary = cost_summary(original_trades, adjusted)
+# summary = {"original_return_pct": 12.3, "adjusted_return_pct": 10.8, "total_cost_pct": 1.5}
+```
+
 ## Architecture
 
 See `docs/architecture.md` for the full 8-layer architecture, dependency rules, and migration status.

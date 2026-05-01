@@ -10,3 +10,7 @@ Dependencies: core, data (for historical bars), strategies.
 # Re-export current analytics for backward compatibility
 from ..backtest import Trade, BacktestResult, replay_bars, match_trades, run_backtest
 from ..metrics import BacktestMetrics, compute_metrics, format_report, format_trades, format_comparison
+
+# New analytics modules
+from .regime import MarketRegime, detect_regime, regime_summary
+from .costs import CostModel, apply_costs, cost_summary

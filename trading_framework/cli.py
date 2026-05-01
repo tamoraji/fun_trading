@@ -19,6 +19,7 @@ STRATEGY_DISPLAY_NAMES = {
     "macd": "MACD",
     "goslin_momentum": "Goslin Momentum",
     "market_profile": "Market Profile",
+    "momentum_ml": "Momentum ML",
 }
 
 

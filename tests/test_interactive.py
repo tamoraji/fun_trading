@@ -130,7 +130,7 @@ class PresetPathTests(_WizardTestCase):
         ]
         result = self._run(inputs)
         self.assertTrue(result.backtest)
-        self.assertEqual(6, len(result.settings.all_strategies))
+        self.assertEqual(7, len(result.settings.all_strategies))  # all 7 strategies
 
     def test_goslin_preset(self):
         inputs = [
