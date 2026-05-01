@@ -17,14 +17,17 @@ Shared utilities in indicators.py (RSI, EMA, SMA, value area computation).
 
 Dependencies: core only.
 """
-# Re-export current strategy classes for backward compatibility
-from ..strategy import (
-    Strategy,
-    MovingAverageCrossoverStrategy,
-    RSIStrategy,
-    BreakoutStrategy,
-    MACDStrategy,
-    GoslinMomentumStrategy,
-    MarketProfileStrategy,
-    create_strategy,
-)
+# Import all strategies to trigger @register_strategy decorators
+from . import sma, rsi, breakout, macd, goslin, market_profile
+
+# Re-export for backward compatibility
+from .sma import MovingAverageCrossoverStrategy
+from .rsi import RSIStrategy
+from .breakout import BreakoutStrategy
+from .macd import MACDStrategy
+from .goslin import GoslinMomentumStrategy
+from .market_profile import MarketProfileStrategy
+from .indicators import average, compute_rsi, compute_ema, compute_value_area
+
+# Re-export Strategy ABC and factory from flat module (backward compat)
+from ..strategy import Strategy, create_strategy
