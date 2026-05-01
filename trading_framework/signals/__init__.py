@@ -12,3 +12,8 @@ Dependencies: core, infra (event bus).
 # Re-export current notifier/history classes for backward compatibility
 from ..notifiers import Notifier, ConsoleNotifier, WebhookNotifier, EmailNotifier, create_notifiers, format_signal
 from ..history import SignalHistory, JsonLinesHistory, NullHistory, create_signal_history
+
+# New signal intelligence modules
+from .confidence import score_signals
+from .aggregator import SignalAggregator, AggregatedSignal
+from .router import NotificationRouter

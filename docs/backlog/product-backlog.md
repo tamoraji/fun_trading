@@ -27,7 +27,7 @@ Initial stories:
 - STRAT-013 Add support/resistance level detection (pivot points, Fibonacci retracement/extension)
 - STRAT-014 Add divergence detection engine (price vs RSI, MACD, OBV divergences)
 - STRAT-015 Add multi-timeframe strategy support (e.g. daily trend + 5m entry)
-- STRAT-016 Add composite signal scoring system (combine multiple strategies with weighted votes)
+- ~~STRAT-016 Add composite signal scoring system~~ DONE (signals/aggregator + confidence)
 - STRAT-017 Add pairs trading / cointegration strategy for correlated instruments
 - STRAT-018 Add Parabolic SAR trailing strategy
 - STRAT-019 Add volume profile and OBV-based strategies
@@ -62,7 +62,7 @@ Goal: make signals durable, multi-channel, and useful for review and improvement
 Initial stories:
 
 - ~~SIG-001 Persist emitted signals to local history~~ DONE
-- SIG-002 Add Telegram notifier with bot integration
+- ~~SIG-002 Add Telegram notifier with bot integration~~ DONE
 - SIG-003 Add daily summary report of emitted signals
 - SIG-004 Add Slack notifier
 - SIG-005 Add Discord notifier

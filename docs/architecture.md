@@ -135,7 +135,7 @@ Shared indicator math in `indicators.py` (RSI, EMA, SMA, value area).
 | `infra/` | **Active** | event_bus.py (sync pub/sub), plugin.py (strategy registry with @register_strategy) |
 | `data/` | Scaffolded | Re-exports from flat `data.py` + `cache.py` |
 | `strategies/` | **Active** | 6 strategies split into individual files + indicators.py + plugin registration |
-| `signals/` | Scaffolded | Re-exports from flat `notifiers.py` + `history.py` |
+| `signals/` | **Active** | Confidence scoring, signal aggregator, notification router, Telegram notifier |
 | `execution/` | Scaffolded | Re-exports from flat `paper.py` |
 | `analytics/` | Scaffolded | Re-exports from flat `backtest.py` + `metrics.py` |
 | `risk_mgmt/` | Scaffolded | Re-exports from flat `risk.py` |
