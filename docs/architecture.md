@@ -134,12 +134,12 @@ Shared indicator math in `indicators.py` (RSI, EMA, SMA, value area).
 | `core/` | **Active** | types.py (BUY/SELL/HOLD, Confidence, AssetClass), events.py (8 event types), interfaces.py (6 ABCs) |
 | `infra/` | **Active** | event_bus.py (sync pub/sub), plugin.py (strategy registry with @register_strategy) |
 | `data/` | Scaffolded | Re-exports from flat `data.py` + `cache.py` |
-| `strategies/` | Scaffolded | Re-exports from flat `strategy.py`. Split planned for Phase 2 |
+| `strategies/` | **Active** | 6 strategies split into individual files + indicators.py + plugin registration |
 | `signals/` | Scaffolded | Re-exports from flat `notifiers.py` + `history.py` |
 | `execution/` | Scaffolded | Re-exports from flat `paper.py` |
 | `analytics/` | Scaffolded | Re-exports from flat `backtest.py` + `metrics.py` |
 | `risk_mgmt/` | Scaffolded | Re-exports from flat `risk.py` |
-| `service/` | Scaffolded | TradingService planned for Phase 2 |
+| `service/` | **Active** | TradingService facade (create_engine, run_backtest, list_strategies, etc.) |
 | `ui/` | Scaffolded | CLI refactor planned for Phase 2 |
 
-The flat modules still contain all implementation logic. New packages provide re-exports for forward-compatible imports plus new infrastructure (event bus, plugin registry, core types/events/interfaces). The engine publishes events to the bus at all key points (cycle start/end, signal emitted, signal blocked, data error). 194 tests pass.
+Strategies are split into individual files with plugin registration. The TradingService facade provides a single API for all UIs. The event bus is wired into the engine. Flat modules remain for backward compatibility. 200 tests pass.

@@ -10,3 +10,4 @@ This is the key architectural boundary:
 
 Dependencies: all lower layers.
 """
+from .api import TradingService
