@@ -67,6 +67,26 @@
     </div>
 </div>
 
+{% if results.cost_info %}
+<div class="card" style="margin-top: 8px;">
+    <h2>Transaction Costs Impact (0.1% slippage + $1 commission)</h2>
+    <div class="grid-3">
+        <div class="metric">
+            <div class="value">{{ results.cost_info.original }}</div>
+            <div class="label">Before Costs</div>
+        </div>
+        <div class="metric">
+            <div class="value">{{ results.cost_info.adjusted }}</div>
+            <div class="label">After Costs</div>
+        </div>
+        <div class="metric">
+            <div class="value negative">{{ results.cost_info.cost }}</div>
+            <div class="label">Total Cost</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div class="card">
     <h2>Price Chart — {{ results.symbol }} ({{ results.strategy }})</h2>
     <p style="color: #8b949e; font-size: 12px; margin-bottom: 8px;">{{ results.start_date }} to {{ results.end_date }} ({{ results.num_bars }} bars)</p>
