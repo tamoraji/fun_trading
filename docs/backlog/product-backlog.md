@@ -43,8 +43,8 @@ Initial stories:
 - ~~SIM-001 Add historical replay mode~~ DONE
 - ~~SIM-002 Add backtest result summary metrics~~ DONE
 - ~~SIM-003 Add comparison output between strategies~~ DONE
-- SIM-004 Add slippage modeling (fixed, percentage, volume-based)
-- SIM-005 Add commission and fee modeling (per-trade, per-share, percentage, tiered)
+- ~~SIM-004 Add slippage modeling~~ DONE (analytics/costs.py)
+- ~~SIM-005 Add commission and fee modeling~~ DONE (analytics/costs.py)
 - SIM-006 Add walk-forward optimization with in-sample/out-of-sample splits
 - SIM-007 Add Monte Carlo simulation for strategy robustness testing
 - SIM-008 Add equity curve and drawdown curve visualization (Plotly or Matplotlib)
@@ -200,14 +200,14 @@ Goal: add statistical, machine learning, and AI-based forecasting alongside trad
 
 Initial stories:
 
-- ML-001 Add feature engineering pipeline (rolling stats, lagged features, cross-sectional ranks)
+- ~~ML-001 Add feature engineering pipeline (14 features)~~ DONE
 - ML-002 Add ARIMA/SARIMA time series forecasting
 - ML-003 Add GARCH volatility forecasting
 - ML-004 Add Random Forest / Gradient Boosting classifier for direction prediction
 - ML-005 Add LSTM/GRU recurrent neural network for sequence prediction
 - ML-006 Add sentiment analysis from financial news feeds
 - ML-007 Add social media sentiment integration (Reddit, Twitter/X, StockTwits)
-- ML-008 Add regime detection using Hidden Markov Models
+- ~~ML-008 Add regime detection (volatility + trend-based)~~ DONE
 - ML-009 Add ensemble model system (combine multiple model predictions with confidence weighting)
 - ML-010 Add online/adaptive learning (auto-retrain models on new data)
 - ML-011 Add model performance monitoring and drift detection

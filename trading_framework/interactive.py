@@ -85,6 +85,17 @@ STRATEGY_INFO = {
         ],
         "bars_needed": lambda p: p.get("direction_period", 49) + p.get("confirming_period", 15) + 1,
     },
+    "momentum_ml": {
+        "display_name": "Momentum ML",
+        "short_desc": "ML-inspired feature scoring: RSI, trend, volume, volatility → composite score.",
+        "plain_desc": "Uses multiple features to score bullish/bearish momentum",
+        "params": [
+            {"name": "lookback", "prompt": "Feature lookback window", "default": 20, "type": int, "help": "How many bars for rolling feature calculations."},
+            {"name": "buy_threshold", "prompt": "Buy threshold (0.0-1.0)", "default": 0.65, "type": float, "help": "Score above this triggers BUY. Higher = fewer signals."},
+            {"name": "sell_threshold", "prompt": "Sell threshold (0.0-1.0)", "default": 0.35, "type": float, "help": "Score below this triggers SELL. Lower = fewer signals."},
+        ],
+        "bars_needed": lambda p: p.get("lookback", 20) + 16,
+    },
     "market_profile": {
         "display_name": "Market Profile (Value Area)",
         "short_desc": "Trades price relative to the value area — buy below value, sell above value.",
@@ -193,6 +204,7 @@ PRESETS = {
             {"name": "macd", "params": {"fast_period": 12, "slow_period": 26, "signal_period": 9}},
             {"name": "goslin_momentum", "params": {"direction_period": 49, "timing_short": 3, "timing_long": 10, "confirming_period": 15}},
             {"name": "market_profile", "params": {"lookback": 20, "value_area_pct": 70.0}},
+            {"name": "momentum_ml", "params": {"lookback": 20, "buy_threshold": 0.65, "sell_threshold": 0.35}},
         ],
         "bar_interval": "1d",
         "poll_seconds": 300,
