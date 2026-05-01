@@ -136,7 +136,7 @@ Shared indicator math in `indicators.py` (RSI, EMA, SMA, value area).
 | `data/` | **Active** | DataManager (routes by asset class), CSVDataProvider, resampler, cache |
 | `strategies/` | **Active** | 6 strategies split into individual files + indicators.py + plugin registration |
 | `signals/` | **Active** | Confidence scoring, signal aggregator, notification router, Telegram notifier |
-| `execution/` | Scaffolded | Re-exports from flat `paper.py` |
+| `execution/` | **Active** | Broker ABC, OrderManager with HITL approval gate, 4 position sizers (%, fixed, risk-per-trade, Kelly) |
 | `analytics/` | Scaffolded | Re-exports from flat `backtest.py` + `metrics.py` |
 | `risk_mgmt/` | Scaffolded | Re-exports from flat `risk.py` |
 | `service/` | **Active** | TradingService facade (create_engine, run_backtest, list_strategies, etc.) |

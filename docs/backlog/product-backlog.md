@@ -95,7 +95,7 @@ Initial stories:
 - RISK-012 Add portfolio exposure limits (gross and net)
 - RISK-013 Add sector/asset-class concentration limits
 - RISK-014 Add correlation-based position limits (avoid correlated bets)
-- RISK-015 Add position sizing models (fixed, percentage-of-equity, Kelly criterion, risk-per-trade)
+- ~~RISK-015 Add position sizing models (fixed, %, Kelly, risk-per-trade)~~ DONE
 - RISK-016 Add kill switch / emergency stop (halt all trading immediately)
 - RISK-017 Add fat-finger protection (reject orders beyond size/price thresholds)
 - RISK-018 Add stale data detection (halt if data feed is delayed beyond threshold)
@@ -110,7 +110,7 @@ Initial stories:
 
 - ~~EXEC-001 Add paper-trading execution adapter~~ DONE
 - ~~EXEC-002 Record order intents and execution outcomes~~ DONE
-- EXEC-003 Add broker interface abstraction (pluggable broker adapters)
+- ~~EXEC-003 Add broker interface abstraction~~ DONE
 - EXEC-004 Add Alpaca broker adapter (paper + live trading)
 - EXEC-005 Add Interactive Brokers adapter via IB Gateway API
 - EXEC-006 Add order type support (market, limit, stop, stop-limit, trailing stop)
@@ -147,9 +147,9 @@ Goal: provide human oversight, approval workflows, and manual override for all a
 
 Initial stories:
 
-- HITL-001 Add trade approval workflow (signals require human confirmation before execution)
-- HITL-002 Add configurable approval thresholds (auto-execute small trades, require approval for large ones)
-- HITL-003 Add approval timeout handling (auto-cancel or escalate if no response within N minutes)
+- ~~HITL-001 Add trade approval workflow~~ DONE (OrderManager with approval mode)
+- ~~HITL-002 Add configurable approval thresholds~~ DONE (auto vs approval mode)
+- ~~HITL-003 Add approval timeout handling~~ DONE (expire_stale with configurable timeout)
 - HITL-004 Add manual override controls (force-close, pause/resume bot, adjust stops on active trades)
 - HITL-005 Add parameter hot-reload (adjust strategy parameters without restarting)
 - HITL-006 Add strategy enable/disable per symbol without restart

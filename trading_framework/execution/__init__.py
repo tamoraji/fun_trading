@@ -10,3 +10,11 @@ Dependencies: core, infra (event bus).
 """
 # Re-export current paper trading for backward compatibility
 from ..paper import PaperPortfolio, Position, OrderRecord
+
+# New execution layer modules
+from .broker import Broker
+from .order_manager import OrderManager, OrderStatus, PendingOrder
+from .position_sizer import (
+    PositionSizer, FixedPercentSizer, FixedAmountSizer,
+    RiskPerTradeSizer, KellyCriterionSizer,
+)

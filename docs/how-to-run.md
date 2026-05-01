@@ -253,6 +253,43 @@ Enable in wizard or config to protect against naive signals:
 | Volume guard | Block signals on low-volume bars |
 | Daily limit | Cap signals per symbol per day |
 
+### Human-in-the-Loop (Trade Approval)
+
+Require human approval before executing trades:
+
+```python
+from trading_framework.execution import OrderManager
+
+manager = OrderManager(broker=portfolio, mode="approval", timeout_seconds=300)
+
+# Signal is queued, not executed
+pending = manager.execute(signal)
+
+# Approve or reject from Telegram, TUI, or web
+manager.approve(pending.id)   # executes the trade
+manager.reject(pending.id, reason="Too risky")
+
+# Auto-expire stale orders
+manager.expire_stale()
+```
+
+### Position Sizing
+
+4 sizing models available:
+
+| Model | Description |
+|-------|-------------|
+| `FixedPercentSizer(10)` | 10% of equity per trade |
+| `FixedAmountSizer(10000)` | $10K per trade |
+| `RiskPerTradeSizer(2, 5)` | Risk 2% of equity with 5% stop-loss |
+| `KellyCriterionSizer(0.6, 5, 3)` | Kelly criterion based on win rate |
+
+```python
+from trading_framework.execution import FixedPercentSizer
+sizer = FixedPercentSizer(percent=10)
+quantity = sizer.size(equity=100000, price=150.0)  # → 66.67 shares
+```
+
 ### Paper Trading
 
 Simulate execution without real money. Tracks positions, cash, and P&L:
