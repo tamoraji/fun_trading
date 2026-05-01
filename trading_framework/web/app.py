@@ -81,6 +81,41 @@ async def dashboard(request: Request):
     })
 
 
+@app.get("/market", response_class=HTMLResponse)
+async def market_page(request: Request):
+    """Market overview: regime detection for watchlist symbols."""
+    from ..data import create_market_data_provider
+    from ..models import MarketDataConfig
+    from ..analytics.regime import regime_summary
+    from ..cache import CachedDataProvider
+
+    symbols = ["AAPL", "MSFT", "SPY", "BTC-USD", "GOOGL"]  # default watchlist
+    config = MarketDataConfig(bar_interval="1d", lookback="6mo")
+    provider = CachedDataProvider(create_market_data_provider(config), cache_dir=".cache", ttl_seconds=3600)
+
+    market_data = []
+    for symbol in symbols:
+        try:
+            bars = provider.fetch_bars(symbol, config)
+            summary = regime_summary(bars)
+            last_price = bars[-1].close if bars else 0
+            market_data.append({
+                "symbol": symbol,
+                "price": last_price,
+                "regime": summary["regime"],
+                "slope": summary["slope"],
+                "volatility": summary["volatility"],
+                "vol_percentile": summary["vol_percentile"],
+            })
+        except Exception:
+            market_data.append({"symbol": symbol, "error": True})
+
+    return templates.TemplateResponse(request, "market.html", {
+        "page": "market",
+        "market_data": market_data,
+    })
+
+
 @app.get("/backtest", response_class=HTMLResponse)
 async def backtest_page(request: Request):
     from ..interactive import STRATEGY_INFO, PRESETS
@@ -117,6 +152,12 @@ async def run_backtest_route(
         bt_result = run_backtest(strat, symbol.upper(), bars)
         metrics = compute_metrics(bt_result.trades, bt_result.bars)
 
+        from ..analytics.costs import CostModel, apply_costs, cost_summary as compute_cost_summary
+
+        cost_model = CostModel(slippage_pct=0.1, commission_per_trade=1.0)
+        adjusted_trades = apply_costs(bt_result.trades, cost_model)
+        cost_info = compute_cost_summary(bt_result.trades, adjusted_trades)
+
         # Build Plotly chart data
         chart_data = {
             "dates": [b.timestamp.strftime("%Y-%m-%d") for b in bars],
@@ -150,6 +191,7 @@ async def run_backtest_route(
             "num_bars": len(bars),
             "start_date": bars[0].timestamp.strftime("%Y-%m-%d") if bars else "",
             "end_date": bars[-1].timestamp.strftime("%Y-%m-%d") if bars else "",
+            "cost_info": cost_info,
         }
         error = None
     except Exception as e:

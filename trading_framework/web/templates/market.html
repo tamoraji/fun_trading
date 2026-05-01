@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Market{% endblock %}
+{% block content %}
+<h1 style="margin-bottom: 16px; font-size: 20px;">Market Overview</h1>
+
+<div class="card">
+    <h2>Market Regimes</h2>
+    <p style="color: #8b949e; margin-bottom: 12px;">Based on 6-month daily data. Updated on page load.</p>
+    <table>
+        <tr><th>Symbol</th><th>Price</th><th>Regime</th><th>Trend</th><th>Volatility</th></tr>
+        {% for m in market_data %}
+        <tr>
+            {% if m.error is defined and m.error %}
+            <td><strong>{{ m.symbol }}</strong></td>
+            <td colspan="4" class="neutral">Error fetching data</td>
+            {% else %}
+            <td><strong>{{ m.symbol }}</strong></td>
+            <td>${{ "%.2f"|format(m.price) }}</td>
+            <td>
+                {% if m.regime == "trending_up" %}<span class="badge badge-buy">TRENDING UP</span>
+                {% elif m.regime == "trending_down" %}<span class="badge badge-sell">TRENDING DOWN</span>
+                {% elif m.regime == "high_volatility" %}<span style="background:#2d1a00;color:#f0883e;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold;">HIGH VOL</span>
+                {% elif m.regime == "low_volatility" %}<span style="background:#0d2818;color:#56d364;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold;">LOW VOL</span>
+                {% else %}<span class="badge badge-hold">RANGING</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if m.slope > 0 %}<span class="positive">+{{ "%.4f"|format(m.slope) }}</span>
+                {% else %}<span class="negative">{{ "%.4f"|format(m.slope) }}</span>{% endif %}
+            </td>
+            <td>{{ "%.1f"|format(m.vol_percentile) }}%ile</td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div class="card" style="margin-top: 16px;">
+    <h2>Regime Guide</h2>
+    <table>
+        <tr><th>Regime</th><th>Recommended Strategy</th><th>Description</th></tr>
+        <tr><td><span class="badge badge-buy">TRENDING UP</span></td><td>SMA Crossover, MACD, Goslin</td><td>Strong upward trend — use trend-following strategies</td></tr>
+        <tr><td><span class="badge badge-sell">TRENDING DOWN</span></td><td>RSI (oversold bounces), Goslin</td><td>Strong downward trend — look for short entries or reversal signals</td></tr>
+        <tr><td><span class="badge badge-hold">RANGING</span></td><td>RSI, Market Profile</td><td>Price oscillating in range — use mean-reversion strategies</td></tr>
+        <tr><td style="color:#f0883e;">HIGH VOL</td><td>Reduce size, wider stops</td><td>High volatility — tighten risk management</td></tr>
+        <tr><td style="color:#56d364;">LOW VOL</td><td>Breakout</td><td>Low volatility squeeze — potential breakout imminent</td></tr>
+    </table>
+</div>
+{% endblock %}
