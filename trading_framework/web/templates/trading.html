@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Trading{% endblock %}
+{% block content %}
+<h1 style="margin-bottom: 16px; font-size: 20px;">Trading</h1>
+
+<div class="grid">
+    <div class="card">
+        <h2>Active Strategies</h2>
+        {% if strategies %}
+        <table>
+            <tr><th>Strategy</th><th>Status</th></tr>
+            {% for key, name in strategies.items() %}
+            <tr>
+                <td><strong>{{ name }}</strong></td>
+                <td><span class="badge badge-regime-lovol">ACTIVE</span></td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p class="neutral">No strategies configured.</p>
+        {% endif %}
+    </div>
+    <div class="card">
+        <h2>Signal Summary</h2>
+        <div class="grid" style="gap:8px;">
+            <div class="metric" style="padding:12px;">
+                <div class="value" id="signal-count" style="font-size:24px;">{{ signals|length }}</div>
+                <div class="label">Recent Signals</div>
+            </div>
+            <div class="metric" style="padding:12px;">
+                {% set buy_count = signals|selectattr('action', 'equalto', 'BUY')|list|length %}
+                {% set sell_count = signals|selectattr('action', 'equalto', 'SELL')|list|length %}
+                <div class="value" style="font-size:24px;">
+                    <span class="positive">{{ buy_count }}</span> / <span class="negative">{{ sell_count }}</span>
+                </div>
+                <div class="label">BUY / SELL</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Signal Feed <span class="text-muted" style="font-weight:normal;">(auto-refreshes every 30s)</span></h2>
+    {% if signals %}
+    <table>
+        <tr>
+            <th>Timestamp</th>
+            <th>Symbol</th>
+            <th>Action</th>
+            <th>Price</th>
+            <th>Strategy</th>
+            <th>Confidence</th>
+            <th>Reason</th>
+        </tr>
+        {% for s in signals|reverse %}
+        <tr>
+            <td>{{ s.timestamp[:19] }}</td>
+            <td><strong><a href="/markets/chart/{{ s.symbol }}">{{ s.symbol }}</a></strong></td>
+            <td>
+                <span class="badge {% if s.action == 'BUY' %}badge-buy{% elif s.action == 'SELL' %}badge-sell{% else %}badge-hold{% endif %}">
+                    {{ s.action }}
+                </span>
+            </td>
+            <td>${{ "%.2f"|format(s.price) }}</td>
+            <td>{{ s.strategy_name }}</td>
+            <td>
+                {% if s.details is defined and s.details %}
+                    {% set score = s.details.get('score', s.details.get('confidence', 0)) if s.details is mapping else 0 %}
+                    {% if score > 0.7 %}
+                        <span class="badge badge-conf-high">HIGH</span>
+                    {% elif score > 0.4 %}
+                        <span class="badge badge-conf-medium">MEDIUM</span>
+                    {% else %}
+                        <span class="badge badge-conf-low">LOW</span>
+                    {% endif %}
+                {% else %}
+                    <span class="badge badge-conf-low">LOW</span>
+                {% endif %}
+            </td>
+            <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ s.reason }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p class="neutral">No signals recorded yet. Run the framework to generate signals.</p>
+    {% endif %}
+</div>
+
+<script>
+setInterval(function(){
+    fetch('/api/signals').then(function(r){ return r.json(); }).then(function(data){
+        document.getElementById('signal-count').textContent = data.length;
+    });
+}, 30000);
+</script>
+{% endblock %}

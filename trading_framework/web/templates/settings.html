@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<h1 style="margin-bottom: 16px; font-size: 20px;">Settings</h1>
+
+<div class="card">
+    <h2>Configuration Overview</h2>
+    <table>
+        <tr><th>Setting</th><th>Value</th></tr>
+        <tr><td>Data Source</td><td>Yahoo Finance (via yfinance)</td></tr>
+        <tr><td>Default Bar Interval</td><td>1d (daily)</td></tr>
+        <tr><td>Default Lookback</td><td>6 months</td></tr>
+        <tr><td>Cache TTL</td><td>3600 seconds (1 hour)</td></tr>
+        <tr><td>Watchlist</td><td>AAPL, MSFT, SPY, BTC-USD, GOOGL, TSLA, AMZN, ETH-USD</td></tr>
+    </table>
+</div>
+
+<div class="card">
+    <h2>Presets</h2>
+    <p class="text-muted mb-8">Pre-configured trading setups. Use <code>python -m trading_framework</code> interactive mode to activate a preset.</p>
+    <table>
+        <tr><th>Preset</th><th>Description</th><th>Strategies</th><th>Bar Interval</th></tr>
+        {% for key, p in presets.items() %}
+        <tr>
+            <td><strong>{{ p.display_name }}</strong></td>
+            <td>{{ p.desc }}</td>
+            <td>
+                {% for s in p.strategies %}
+                    <span class="badge badge-hold">{{ s.name }}</span>
+                {% endfor %}
+            </td>
+            <td>{{ p.bar_interval }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div class="card">
+    <h2>Strategy Reference</h2>
+    <p class="text-muted mb-8">All available strategies with parameters and defaults.</p>
+</div>
+
+{% for key, info in strategies.items() %}
+<div class="card">
+    <h2>{{ info.display_name }}</h2>
+    <p style="margin-bottom: 8px;">{{ info.short_desc }}</p>
+    <p class="text-muted mb-8">{{ info.plain_desc }}</p>
+    {% if info.params %}
+    <table>
+        <tr><th>Parameter</th><th>Default</th><th>Description</th></tr>
+        {% for p in info.params %}
+        <tr>
+            <td><code>{{ p.name }}</code></td>
+            <td>{{ p.default }}</td>
+            <td>{{ p.help }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+</div>
+{% endfor %}
+
+<div class="card">
+    <h2>Documentation Links</h2>
+    <table>
+        <tr><th>Resource</th><th>Description</th></tr>
+        <tr>
+            <td><code>python -m trading_framework</code></td>
+            <td>Interactive CLI -- configure strategies, run backtests, start live monitoring</td>
+        </tr>
+        <tr>
+            <td><code>python -m trading_framework web</code></td>
+            <td>Start this web dashboard</td>
+        </tr>
+        <tr>
+            <td><code>docs/</code></td>
+            <td>Project documentation directory</td>
+        </tr>
+        <tr>
+            <td><code>config.example.json</code></td>
+            <td>Example configuration file</td>
+        </tr>
+    </table>
+</div>
+{% endblock %}

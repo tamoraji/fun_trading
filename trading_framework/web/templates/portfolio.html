@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Portfolio{% endblock %}
+{% block content %}
+<h1 style="margin-bottom: 16px; font-size: 20px;">Portfolio</h1>
+
+{% if portfolio %}
+<div class="grid-3">
+    <div class="card metric">
+        <div class="value">${{ "%.2f"|format(portfolio.cash) }}</div>
+        <div class="label">Current Cash</div>
+    </div>
+    <div class="card metric">
+        <div class="value {% if portfolio.realized_pnl >= 0 %}positive{% else %}negative{% endif %}">
+            ${{ "%.2f"|format(portfolio.realized_pnl) }}
+        </div>
+        <div class="label">Realized P&L</div>
+    </div>
+    <div class="card metric">
+        <div class="value">{{ portfolio.num_orders }}</div>
+        <div class="label">Total Orders</div>
+    </div>
+</div>
+
+<div class="grid-3 mt-8">
+    <div class="card metric">
+        <div class="value">${{ "%.2f"|format(portfolio.starting_cash) }}</div>
+        <div class="label">Starting Cash</div>
+    </div>
+    <div class="card metric">
+        {% set equity_change = portfolio.cash + portfolio.realized_pnl - portfolio.starting_cash %}
+        <div class="value {% if equity_change >= 0 %}positive{% else %}negative{% endif %}">
+            {{ "%+.2f"|format(equity_change / portfolio.starting_cash * 100) }}%
+        </div>
+        <div class="label">Return on Capital</div>
+    </div>
+    <div class="card metric">
+        <div class="value">{{ portfolio.positions|length }}</div>
+        <div class="label">Open Positions</div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Open Positions</h2>
+    {% if portfolio.positions %}
+    <table>
+        <tr>
+            <th>Symbol</th>
+            <th>Side</th>
+            <th>Entry Price</th>
+            <th>Quantity</th>
+            <th>Strategy</th>
+            <th>Entry Date</th>
+        </tr>
+        {% for p in portfolio.positions %}
+        <tr>
+            <td><strong><a href="/markets/chart/{{ p.symbol }}">{{ p.symbol }}</a></strong></td>
+            <td>
+                <span class="badge {% if p.side == 'long' %}badge-buy{% else %}badge-sell{% endif %}">
+                    {{ p.side|upper }}
+                </span>
+            </td>
+            <td>${{ "%.2f"|format(p.entry_price) }}</td>
+            <td>{{ "%.4f"|format(p.quantity) }}</td>
+            <td>{{ p.strategy }}</td>
+            <td>{{ p.entry_date }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p class="neutral">No open positions.</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>Order History</h2>
+    {% if portfolio.orders %}
+    <table>
+        <tr>
+            <th>#</th>
+            <th>Timestamp</th>
+            <th>Symbol</th>
+            <th>Action</th>
+            <th>Price</th>
+            <th>Quantity</th>
+            <th>Strategy</th>
+            <th>P&L</th>
+        </tr>
+        {% for o in portfolio.orders|reverse %}
+        <tr>
+            <td>{{ portfolio.orders|length - loop.index0 }}</td>
+            <td>{{ o.timestamp }}</td>
+            <td><strong>{{ o.symbol }}</strong></td>
+            <td>
+                <span class="badge {% if o.action == 'BUY' %}badge-buy{% else %}badge-sell{% endif %}">
+                    {{ o.action }}
+                </span>
+            </td>
+            <td>${{ "%.2f"|format(o.price) }}</td>
+            <td>{{ "%.4f"|format(o.quantity) }}</td>
+            <td>{{ o.strategy }}</td>
+            <td>
+                {% if o.pnl is not none %}
+                    <span class="{% if o.pnl >= 0 %}positive{% else %}negative{% endif %}">
+                        ${{ "%.2f"|format(o.pnl) }}
+                    </span>
+                {% else %}
+                    <span class="neutral">--</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p class="neutral">No orders yet.</p>
+    {% endif %}
+</div>
+
+{% else %}
+<div class="card">
+    <h2>No Portfolio</h2>
+    <p>Run the framework with paper trading enabled to see portfolio data here.</p>
+    <p class="text-muted mt-8"><code>python -m trading_framework</code> &rarr; Quick Start &rarr; Enable paper trading</p>
+</div>
+{% endif %}
+{% endblock %}

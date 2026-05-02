@@ -154,17 +154,21 @@ Keyboard shortcuts: **Q** quit, **P** pause/resume, **S** portfolio summary.
 Requires `pip install -e ".[tui]"` (textual).
 
 ### 5. Web Dashboard
-Browser-based dashboard with portfolio view, interactive backtesting with Plotly charts, strategy reference, and signal history.
+Full 6-tab trading platform in your browser.
 
 ```bash
 python -m trading_framework --web
+# Open http://127.0.0.1:8000
 ```
 
-Opens at `http://127.0.0.1:8000`. Features:
-- **Dashboard**: Portfolio positions, cash, P&L, recent signals
-- **Backtest**: Pick symbol + strategy + history length, get interactive chart with BUY/SELL markers
-- **Strategies**: Reference page for all 6 strategies with parameters
-- **Signals**: Browsable signal history
+| Tab | What it does |
+|-----|-------------|
+| **Markets** | Watchlist with prices, change%, regime badges. Click symbol → candlestick chart with SMA 20/50 overlays. Auto-refreshes every 60s. |
+| **Trading** | Live signal feed with confidence scoring (HIGH/MED/LOW). Strategy status. Auto-refreshes every 30s. |
+| **Backtest Lab** | Pick symbol + strategy → candlestick chart with BUY/SELL markers + cost-adjusted metrics. |
+| **Predictions** | ML momentum scores per symbol (progress bars), feature values (RSI, volatility, trend), regime-based strategy recommendations. |
+| **Portfolio** | Open positions, equity summary, full order history. |
+| **Settings** | Strategy reference, presets, documentation links. |
 
 Or choose "5. Web Dashboard" in the wizard. Requires `pip install -e ".[web]"`.
 

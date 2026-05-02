@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Predictions{% endblock %}
+{% block content %}
+<h1 style="margin-bottom: 16px; font-size: 20px;">Predictions</h1>
+
+<div class="card">
+    <h2>ML Momentum Scores</h2>
+    <p class="text-muted mb-8">Momentum ML strategy scores for watchlist symbols. Score > 65% = BUY, &lt; 35% = SELL.</p>
+    <table>
+        <tr>
+            <th>Symbol</th>
+            <th>Regime</th>
+            <th>ML Score</th>
+            <th>ML Action</th>
+            <th>RSI (14)</th>
+            <th>Volatility</th>
+            <th>Vol Ratio</th>
+            <th>Trend</th>
+        </tr>
+        {% for p in predictions %}
+        <tr>
+            {% if p.error is defined and p.error %}
+            <td><strong>{{ p.symbol }}</strong></td>
+            <td colspan="7" class="neutral">Error computing predictions</td>
+            {% else %}
+            <td><strong><a href="/markets/chart/{{ p.symbol }}">{{ p.symbol }}</a></strong></td>
+            <td>
+                {% if p.regime == "trending_up" %}
+                    <span class="badge badge-regime-up">TRENDING UP</span>
+                {% elif p.regime == "trending_down" %}
+                    <span class="badge badge-regime-down">TRENDING DOWN</span>
+                {% elif p.regime == "high_volatility" %}
+                    <span class="badge badge-regime-hivol">HIGH VOL</span>
+                {% elif p.regime == "low_volatility" %}
+                    <span class="badge badge-regime-lovol">LOW VOL</span>
+                {% else %}
+                    <span class="badge badge-regime-range">RANGING</span>
+                {% endif %}
+            </td>
+            <td>
+                <div class="progress-bar" style="width:80px;display:inline-block;vertical-align:middle;">
+                    <div class="progress-fill" style="width:{{ (p.ml_score * 100)|int }}%;background:{% if p.ml_score > 0.65 %}#3fb950{% elif p.ml_score < 0.35 %}#f85149{% else %}#f0883e{% endif %};"></div>
+                </div>
+                <span style="font-size:12px;margin-left:4px;">{{ "%.0f"|format(p.ml_score * 100) }}%</span>
+            </td>
+            <td>
+                <span class="badge {% if p.ml_action == 'BUY' %}badge-buy{% elif p.ml_action == 'SELL' %}badge-sell{% else %}badge-hold{% endif %}">
+                    {{ p.ml_action }}
+                </span>
+            </td>
+            <td>{% if p.rsi is not none %}{{ "%.1f"|format(p.rsi) }}{% else %}-{% endif %}</td>
+            <td>{% if p.volatility is not none %}{{ "%.4f"|format(p.volatility) }}{% else %}-{% endif %}</td>
+            <td>{% if p.volume_ratio is not none %}{{ "%.2f"|format(p.volume_ratio) }}{% else %}-{% endif %}</td>
+            <td>
+                {% if p.trend is not none %}
+                    <span class="{% if p.trend > 0 %}positive{% else %}negative{% endif %}">
+                        {{ "%+.3f"|format(p.trend) }}
+                    </span>
+                {% else %}-{% endif %}
+            </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+<div class="card mt-16">
+    <h2>Strategy Recommendations by Regime</h2>
+    <table>
+        <tr><th>Regime</th><th>Recommended Strategies</th><th>Rationale</th></tr>
+        <tr>
+            <td><span class="badge badge-regime-up">TRENDING UP</span></td>
+            <td>SMA Crossover, MACD, Goslin Momentum</td>
+            <td>Follow the trend with momentum strategies. Goslin provides high-conviction entries when all three lines align.</td>
+        </tr>
+        <tr>
+            <td><span class="badge badge-regime-down">TRENDING DOWN</span></td>
+            <td>RSI (oversold bounces), Goslin Momentum</td>
+            <td>Look for oversold conditions for counter-trend entries. Goslin can catch trend reversals early.</td>
+        </tr>
+        <tr>
+            <td><span class="badge badge-regime-range">RANGING</span></td>
+            <td>RSI, Market Profile</td>
+            <td>Mean-reversion strategies work best. Buy near support (value area low), sell near resistance.</td>
+        </tr>
+        <tr>
+            <td><span class="badge badge-regime-hivol">HIGH VOL</span></td>
+            <td>Reduce position size, wider stops</td>
+            <td>Volatile conditions favor caution. Reduce exposure and widen stop-loss levels.</td>
+        </tr>
+        <tr>
+            <td><span class="badge badge-regime-lovol">LOW VOL</span></td>
+            <td>Breakout</td>
+            <td>Low volatility often precedes a breakout. Channel breakout strategy excels here.</td>
+        </tr>
+    </table>
+</div>
+
+<div class="card mt-16">
+    <h2>Feature Legend</h2>
+    <table>
+        <tr><th>Feature</th><th>Description</th><th>Interpretation</th></tr>
+        <tr><td>RSI (14)</td><td>Relative Strength Index over 14 periods</td><td>&lt; 30 = oversold, &gt; 70 = overbought</td></tr>
+        <tr><td>Volatility</td><td>Rolling standard deviation of returns</td><td>Higher = more volatile</td></tr>
+        <tr><td>Vol Ratio</td><td>Current volume / average volume</td><td>&gt; 1.5 = high volume, &lt; 0.5 = low volume</td></tr>
+        <tr><td>Trend</td><td>Price vs SMA ratio (price_vs_sma)</td><td>Positive = above average, negative = below</td></tr>
+    </table>
+</div>
+{% endblock %}
