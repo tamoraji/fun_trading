@@ -7,7 +7,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace; background: #0d1117; color: #c9d1d9; }
-        nav { background: #161b22; border-bottom: 1px solid #30363d; padding: 12px 24px; display: flex; align-items: center; gap: 24px; }
+        nav { background: #161b22; border-bottom: 1px solid #30363d; padding: 12px 24px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
         nav .logo { font-size: 18px; font-weight: bold; color: #58a6ff; }
         nav a { color: #8b949e; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 14px; }
         nav a:hover, nav a.active { color: #c9d1d9; background: #21262d; }
@@ -16,6 +16,7 @@
         .card h2 { color: #58a6ff; margin-bottom: 12px; font-size: 16px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+        .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
         th { text-align: left; padding: 8px; color: #8b949e; border-bottom: 1px solid #30363d; }
         td { padding: 8px; border-bottom: 1px solid #21262d; }
@@ -26,6 +27,14 @@
         .badge-buy { background: #0d2818; color: #3fb950; }
         .badge-sell { background: #2d0a0a; color: #f85149; }
         .badge-hold { background: #1c1e21; color: #8b949e; }
+        .badge-regime-up { background: #0d2818; color: #3fb950; }
+        .badge-regime-down { background: #2d0a0a; color: #f85149; }
+        .badge-regime-range { background: #1c1e21; color: #8b949e; }
+        .badge-regime-hivol { background: #2d1a00; color: #f0883e; }
+        .badge-regime-lovol { background: #0d2818; color: #56d364; }
+        .badge-conf-high { background: #0d2818; color: #3fb950; }
+        .badge-conf-medium { background: #2d1a00; color: #f0883e; }
+        .badge-conf-low { background: #1c1e21; color: #8b949e; }
         .metric { text-align: center; padding: 16px; }
         .metric .value { font-size: 28px; font-weight: bold; }
         .metric .label { font-size: 12px; color: #8b949e; margin-top: 4px; }
@@ -33,19 +42,33 @@
         select, input[type=text] { background: #0d1117; color: #c9d1d9; border: 1px solid #30363d; padding: 8px 12px; border-radius: 6px; font-size: 14px; }
         button { background: #238636; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; }
         button:hover { background: #2ea043; }
+        .btn-approve { background: #238636; }
+        .btn-reject { background: #da3633; }
+        .btn-approve:hover { background: #2ea043; }
+        .btn-reject:hover { background: #b62324; }
         .chart-container { width: 100%; height: 400px; }
-        @media (max-width: 768px) { .grid, .grid-3 { grid-template-columns: 1fr; } }
+        .progress-bar { height: 6px; background: #21262d; border-radius: 3px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 3px; }
+        a { color: #58a6ff; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .text-muted { color: #8b949e; font-size: 12px; }
+        .mb-8 { margin-bottom: 8px; }
+        .mb-16 { margin-bottom: 16px; }
+        .mt-8 { margin-top: 8px; }
+        .mt-16 { margin-top: 16px; }
+        @media (max-width: 768px) { .grid, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
     </style>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
     <nav>
         <span class="logo">Trading Framework</span>
-        <a href="/" class="{% if page == 'dashboard' %}active{% endif %}">Dashboard</a>
-        <a href="/market" class="{% if page == 'market' %}active{% endif %}">Market</a>
-        <a href="/backtest" class="{% if page == 'backtest' %}active{% endif %}">Backtest</a>
-        <a href="/strategies" class="{% if page == 'strategies' %}active{% endif %}">Strategies</a>
-        <a href="/signals" class="{% if page == 'signals' %}active{% endif %}">Signals</a>
+        <a href="/markets" class="{% if page == 'markets' %}active{% endif %}">Markets</a>
+        <a href="/trading" class="{% if page == 'trading' %}active{% endif %}">Trading</a>
+        <a href="/backtest" class="{% if page == 'backtest' %}active{% endif %}">Backtest Lab</a>
+        <a href="/predictions" class="{% if page == 'predictions' %}active{% endif %}">Predictions</a>
+        <a href="/portfolio" class="{% if page == 'portfolio' %}active{% endif %}">Portfolio</a>
+        <a href="/settings" class="{% if page == 'settings' %}active{% endif %}">Settings</a>
     </nav>
     <div class="container">
         {% block content %}{% endblock %}

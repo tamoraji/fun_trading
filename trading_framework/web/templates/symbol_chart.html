@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}{{ symbol_data.symbol }} Chart{% endblock %}
+{% block content %}
+<p class="mb-16"><a href="/markets">&larr; Back to Markets</a></p>
+
+{% if error %}
+<div class="card" style="border-color: #f85149;">
+    <h2 style="color: #f85149;">Error</h2>
+    <p>{{ error }}</p>
+</div>
+{% else %}
+<div class="card">
+    <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:16px;">
+        <h2 style="margin-bottom:0; font-size:24px;">{{ symbol_data.symbol }}</h2>
+        <span style="font-size:28px; font-weight:bold;">${{ "%.2f"|format(symbol_data.price) }}</span>
+        <span class="{% if symbol_data.change_pct >= 0 %}positive{% else %}negative{% endif %}" style="font-size:18px;">
+            {{ "%+.2f"|format(symbol_data.change_pct) }}%
+        </span>
+        {% if symbol_data.regime == "trending_up" %}
+            <span class="badge badge-regime-up">TRENDING UP</span>
+        {% elif symbol_data.regime == "trending_down" %}
+            <span class="badge badge-regime-down">TRENDING DOWN</span>
+        {% elif symbol_data.regime == "high_volatility" %}
+            <span class="badge badge-regime-hivol">HIGH VOL</span>
+        {% elif symbol_data.regime == "low_volatility" %}
+            <span class="badge badge-regime-lovol">LOW VOL</span>
+        {% else %}
+            <span class="badge badge-regime-range">RANGING</span>
+        {% endif %}
+    </div>
+
+    <div class="grid-4 mb-16">
+        <div class="metric" style="padding:8px;">
+            <div class="value" style="font-size:18px;">${{ "%.2f"|format(symbol_data.high) }}</div>
+            <div class="label">High</div>
+        </div>
+        <div class="metric" style="padding:8px;">
+            <div class="value" style="font-size:18px;">${{ "%.2f"|format(symbol_data.low) }}</div>
+            <div class="label">Low</div>
+        </div>
+        <div class="metric" style="padding:8px;">
+            <div class="value" style="font-size:18px;">{{ "{:,.0f}".format(symbol_data.volume) }}</div>
+            <div class="label">Volume</div>
+        </div>
+        <div class="metric" style="padding:8px;">
+            <div class="value" style="font-size:18px;">{{ "%.1f"|format(symbol_data.vol_percentile) }}%ile</div>
+            <div class="label">Vol Percentile</div>
+        </div>
+    </div>
+
+    <div id="chart" style="width:100%; height:500px;"></div>
+    <script>
+        var d = JSON.parse('{{ chart_data|safe }}');
+        if (d.dates) {
+            var candlestick = {
+                x: d.dates, open: d.opens, high: d.highs, low: d.lows, close: d.closes,
+                type: 'candlestick', name: 'Price',
+                increasing: {line: {color: '#3fb950'}},
+                decreasing: {line: {color: '#f85149'}},
+                xaxis: 'x', yaxis: 'y'
+            };
+            var sma20 = {
+                x: d.dates, y: d.sma20, type: 'scatter', name: 'SMA 20',
+                line: {color: '#58a6ff', width: 1, dash: 'dot'},
+                xaxis: 'x', yaxis: 'y'
+            };
+            var sma50 = {
+                x: d.dates, y: d.sma50, type: 'scatter', name: 'SMA 50',
+                line: {color: '#f0883e', width: 1, dash: 'dot'},
+                xaxis: 'x', yaxis: 'y'
+            };
+            var volume = {
+                x: d.dates, y: d.volumes, type: 'bar', name: 'Volume',
+                marker: {color: 'rgba(88,166,255,0.3)'},
+                xaxis: 'x', yaxis: 'y2'
+            };
+            var layout = {
+                paper_bgcolor: '#161b22', plot_bgcolor: '#0d1117', font: {color: '#c9d1d9'},
+                xaxis: {gridcolor: '#21262d', rangeslider: {visible: false}},
+                yaxis: {gridcolor: '#21262d', title: 'Price', domain: [0.25, 1]},
+                yaxis2: {gridcolor: '#21262d', title: 'Volume', domain: [0, 0.2]},
+                margin: {t: 10, r: 20, b: 40, l: 60},
+                legend: {orientation: 'h', y: -0.15},
+                grid: {rows: 2, columns: 1, pattern: 'independent'},
+            };
+            Plotly.newPlot('chart', [candlestick, sma20, sma50, volume], layout, {responsive: true});
+        }
+    </script>
+</div>
+
+<div class="card">
+    <h2>Regime Analysis</h2>
+    <table>
+        <tr><th>Metric</th><th>Value</th></tr>
+        <tr><td>Current Regime</td><td>
+            {% if symbol_data.regime == "trending_up" %}
+                <span class="badge badge-regime-up">TRENDING UP</span>
+            {% elif symbol_data.regime == "trending_down" %}
+                <span class="badge badge-regime-down">TRENDING DOWN</span>
+            {% elif symbol_data.regime == "high_volatility" %}
+                <span class="badge badge-regime-hivol">HIGH VOL</span>
+            {% elif symbol_data.regime == "low_volatility" %}
+                <span class="badge badge-regime-lovol">LOW VOL</span>
+            {% else %}
+                <span class="badge badge-regime-range">RANGING</span>
+            {% endif %}
+        </td></tr>
+        <tr><td>Trend Slope</td><td>
+            {% if symbol_data.slope > 0 %}<span class="positive">+{{ "%.4f"|format(symbol_data.slope) }}</span>
+            {% else %}<span class="negative">{{ "%.4f"|format(symbol_data.slope) }}</span>{% endif %}
+        </td></tr>
+        <tr><td>Volatility Percentile</td><td>{{ "%.1f"|format(symbol_data.vol_percentile) }}%ile</td></tr>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

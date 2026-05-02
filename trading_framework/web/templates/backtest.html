@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Backtest{% endblock %}
+{% block title %}Backtest Lab{% endblock %}
 {% block content %}
-<h1 style="margin-bottom: 16px; font-size: 20px;">Backtest</h1>
+<h1 style="margin-bottom: 16px; font-size: 20px;">Backtest Lab</h1>
 
 <div class="card">
     <h2>Run Backtest</h2>
@@ -88,24 +88,47 @@
 {% endif %}
 
 <div class="card">
-    <h2>Price Chart — {{ results.symbol }} ({{ results.strategy }})</h2>
-    <p style="color: #8b949e; font-size: 12px; margin-bottom: 8px;">{{ results.start_date }} to {{ results.end_date }} ({{ results.num_bars }} bars)</p>
-    <div id="chart" class="chart-container"></div>
+    <h2>Candlestick Chart — {{ results.symbol }} ({{ results.strategy }})</h2>
+    <p class="text-muted mb-8">{{ results.start_date }} to {{ results.end_date }} ({{ results.num_bars }} bars)</p>
+    <div id="chart" style="width:100%; height:500px;"></div>
     <script>
         var chartData = {{ results.chart_data|safe }};
-        var traces = [
-            {x: chartData.dates, y: chartData.closes, type: 'scatter', name: 'Price', line: {color: '#58a6ff', width: 1.5}},
-            {x: chartData.buy_dates, y: chartData.buy_prices, mode: 'markers', name: 'BUY', marker: {color: '#3fb950', size: 10, symbol: 'triangle-up'}},
-            {x: chartData.sell_dates, y: chartData.sell_prices, mode: 'markers', name: 'SELL', marker: {color: '#f85149', size: 10, symbol: 'triangle-down'}},
-        ];
+        var candlestick = {
+            x: chartData.dates, open: chartData.opens, high: chartData.highs,
+            low: chartData.lows, close: chartData.closes,
+            type: 'candlestick', name: 'Price',
+            increasing: {line: {color: '#3fb950'}},
+            decreasing: {line: {color: '#f85149'}},
+            xaxis: 'x', yaxis: 'y'
+        };
+        var buyMarkers = {
+            x: chartData.buy_dates, y: chartData.buy_prices,
+            mode: 'markers', name: 'BUY',
+            marker: {color: '#3fb950', size: 12, symbol: 'triangle-up'},
+            xaxis: 'x', yaxis: 'y'
+        };
+        var sellMarkers = {
+            x: chartData.sell_dates, y: chartData.sell_prices,
+            mode: 'markers', name: 'SELL',
+            marker: {color: '#f85149', size: 12, symbol: 'triangle-down'},
+            xaxis: 'x', yaxis: 'y'
+        };
+        var volume = {
+            x: chartData.dates, y: chartData.volumes,
+            type: 'bar', name: 'Volume',
+            marker: {color: 'rgba(88,166,255,0.3)'},
+            xaxis: 'x', yaxis: 'y2'
+        };
         var layout = {
             paper_bgcolor: '#161b22', plot_bgcolor: '#0d1117',
             font: {color: '#c9d1d9'},
-            xaxis: {gridcolor: '#21262d'}, yaxis: {gridcolor: '#21262d', title: 'Price'},
+            xaxis: {gridcolor: '#21262d', rangeslider: {visible: false}},
+            yaxis: {gridcolor: '#21262d', title: 'Price', domain: [0.25, 1]},
+            yaxis2: {gridcolor: '#21262d', title: 'Volume', domain: [0, 0.2]},
             margin: {t: 10, r: 20, b: 40, l: 60},
             legend: {orientation: 'h', y: -0.15},
         };
-        Plotly.newPlot('chart', traces, layout, {responsive: true});
+        Plotly.newPlot('chart', [candlestick, buyMarkers, sellMarkers, volume], layout, {responsive: true});
     </script>
 </div>
 
