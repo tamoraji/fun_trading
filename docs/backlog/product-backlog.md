@@ -248,10 +248,10 @@ Initial stories:
 
 **Web Dashboard — for browser-based monitoring and team access:**
 - ~~UI-004 Add web-based dashboard (FastAPI + Jinja2 + Plotly)~~ DONE
-- UI-005 Add real-time P&L and open positions display
-- UI-006 Add interactive price charts with indicator overlays
-- UI-007 Add strategy performance comparison views
-- UI-008 Add signal history browser with filtering
+- ~~UI-005 Add real-time P&L and open positions display~~ DONE (Portfolio tab)
+- ~~UI-006 Add interactive price charts with indicator overlays~~ DONE (Candlestick + SMA 20/50)
+- ~~UI-007 Add strategy performance comparison views~~ DONE (Backtest Lab)
+- ~~UI-008 Add signal history browser with filtering~~ DONE (Trading tab)
 - UI-009 Add configuration editor in dashboard
 - UI-010 Add trade approval/rejection UI for human-in-the-loop workflow
 
